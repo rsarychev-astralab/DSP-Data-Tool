@@ -1,7 +1,6 @@
 import re
 from dataclasses import dataclass
 from functools import lru_cache
-from pathlib import Path
 
 import openpyxl
 
@@ -17,7 +16,7 @@ def _slug(value: str) -> str:
     return slug or "unknown"
 
 
-@dataclass
+@dataclass(frozen=True)
 class DspCatalogEntry:
     id: str
     display_name: str
@@ -27,6 +26,12 @@ class DspCatalogEntry:
     url: str | None
     has_profile: bool
     profile_id: str | None
+
+
+@dataclass(frozen=True)
+class CatalogSnapshot:
+    entries: tuple[DspCatalogEntry, ...]
+    warnings: tuple[str, ...]
 
 
 def _parse_report(val) -> bool | None:
@@ -40,16 +45,18 @@ def _parse_report(val) -> bool | None:
     return None
 
 
-@lru_cache(maxsize=1)
-def load_dsp_catalog() -> list[DspCatalogEntry]:
+def _build_catalog_snapshot() -> CatalogSnapshot:
     path = SPRAVKA_DSP_PATH
     if not path.exists():
-        return []
+        return CatalogSnapshot((), ())
 
     wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
     ws = wb["DSP"] if "DSP" in wb.sheetnames else wb.active
 
     entries: list[DspCatalogEntry] = []
+    seen: dict[str, str] = {}
+    warnings: list[str] = []
+
     for row in ws.iter_rows(min_row=2, values_only=True):
         if not row or not any(cell is not None and str(cell).strip() for cell in row):
             continue
@@ -59,6 +66,13 @@ def load_dsp_catalog() -> list[DspCatalogEntry]:
             continue
         dsp_ids = [p.strip() for p in dsp_id_raw.split(",") if p.strip()]
         catalog_id = _slug(dsp_ids[0] if dsp_ids else display_name)
+        if catalog_id in seen:
+            warnings.append(
+                f"Дубликат id «{catalog_id}»: «{seen[catalog_id]}» и «{display_name or catalog_id}»"
+            )
+        else:
+            seen[catalog_id] = display_name or catalog_id
+
         profile_id = resolve_profile_id(catalog_id)
         has_profile = has_transform_profile(catalog_id)
         contract = str(row[2]).strip() if len(row) > 2 and row[2] is not None else None
@@ -80,11 +94,28 @@ def load_dsp_catalog() -> list[DspCatalogEntry]:
             )
         )
     wb.close()
-    return entries
+    return CatalogSnapshot(tuple(entries), tuple(warnings))
+
+
+@lru_cache(maxsize=1)
+def _catalog_snapshot() -> CatalogSnapshot:
+    return _build_catalog_snapshot()
+
+
+def reload_dsp_catalog() -> None:
+    _catalog_snapshot.cache_clear()
+
+
+def load_dsp_catalog() -> list[DspCatalogEntry]:
+    return list(_catalog_snapshot().entries)
+
+
+def get_catalog_warnings() -> list[str]:
+    return list(_catalog_snapshot().warnings)
 
 
 def get_catalog_entry(partner_id: str) -> DspCatalogEntry | None:
-    for entry in load_dsp_catalog():
+    for entry in _catalog_snapshot().entries:
         if entry.id == partner_id:
             return entry
     return None

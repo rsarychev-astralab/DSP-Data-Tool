@@ -60,14 +60,20 @@ def normalize_vat(val):
     return None
 
 
+def _parse_number(val) -> float | None:
+    if isinstance(val, (int, float)):
+        return float(val)
+    try:
+        return float(str(val).replace(" ", "").replace(",", "."))
+    except (TypeError, ValueError):
+        return None
+
+
 def normalize_impressions(val):
     if not has_value(val):
         return None
-    if isinstance(val, (int, float)):
-        num = float(val)
-    else:
-        num = float(str(val).replace(" ", "").replace(",", "."))
-    if num < 0 or num != int(num):
+    num = _parse_number(val)
+    if num is None or num < 0 or num != int(num):
         return None
     return int(num)
 
@@ -75,9 +81,8 @@ def normalize_impressions(val):
 def normalize_amount(val):
     if not has_value(val):
         return None
-    if isinstance(val, (int, float)):
-        return float(val)
-    return float(str(val).replace(" ", "").replace(",", "."))
+    num = _parse_number(val)
+    return num
 
 
 def normalize_field(field_name, raw_value):

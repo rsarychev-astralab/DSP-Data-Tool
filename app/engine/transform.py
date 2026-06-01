@@ -7,12 +7,25 @@ import openpyxl
 
 from app.config import TEMPLATE_PATH
 from app.engine.normalize import has_value, normalize_field
+
+# Если во входе нет «вида деятельности», подставляем по предмету договора (часто adriver).
+_SUBJECT_DEFAULT_ACTIVITY = {
+    "Distribution": "Distribution",
+    "DistributionOrganization": "Distribution",
+    "Mediation": "Distribution",
+    "Representation": "Distribution",
+    "Commercial": "Commercial",
+    "Conclude": "Conclude",
+    "Other": "Other",
+    "None": "None",
+}
 from app.engine.template import (
     create_output_workbook,
     load_template_headers,
     workbook_to_bytes,
     write_records,
 )
+from app.engine.header_check import read_header_row, validate_source_headers
 from app.profiles.loader import PartnerProfile
 
 
@@ -88,6 +101,12 @@ def build_record(raw: dict, profile: PartnerProfile) -> dict:
         if has_value(val):
             set_field(key, normalize_field(key, val))
 
+    if "activity_type" in field_keys and not has_value(record.get("activity_type")):
+        subject = record.get("contract_subject")
+        fallback = _SUBJECT_DEFAULT_ACTIVITY.get(subject)
+        if fallback:
+            record["activity_type"] = fallback
+
     return record
 
 
@@ -115,6 +134,12 @@ def transform_source(
         raise ValueError(f"Sheet {profile.sheet!r} not found. Available: {available}")
 
     src_ws = src_wb[profile.sheet]
+
+    if profile.header_check:
+        max_index = max(rule.index for rule in profile.header_check.columns)
+        header_row = read_header_row(src_ws, profile.header_check.row, max_index)
+        validate_source_headers(header_row, profile.header_check)
+
     records = []
     skipped_empty = 0
 
@@ -135,8 +160,17 @@ def transform_source(
                         row[idx] if idx < len(row) else None, profile
                     )
         record = build_record(raw, profile)
-        if record:
-            records.append(record)
+        if not record:
+            continue
+        if "contractor_name" in profile.column_map and not has_value(
+            record.get("contractor_name")
+        ):
+            skipped_empty += 1
+            continue
+        if "contract_no" in profile.column_map and not has_value(record.get("contract_no")):
+            skipped_empty += 1
+            continue
+        records.append(record)
 
     write_records(ws, records)
     output_bytes = workbook_to_bytes(wb)

@@ -99,6 +99,12 @@
     }
     .result-block.d-none { display: none !important; }
     #download { font-weight: 700; }
+    .validation-list {
+      max-height: 10rem;
+      overflow-y: auto;
+      font-size: 0.8125rem;
+      color: #991b1b;
+    }
   </style>
 </head>
 <body class="d-flex flex-column">
@@ -171,14 +177,21 @@
         <div class="d-grid gap-2 mb-2">
           <button type="button" class="btn btn-primary btn-lg" id="submit" disabled>Преобразовать</button>
           <button type="button" class="btn btn-outline-secondary" id="save-sample" disabled>
-            Сохранить в «Исходные данные»
+            Сохранить маппинг полей
           </button>
         </div>
         <p class="form-text mb-0" id="sample-name-preview"></p>
 
         <div id="result-block" class="result-block d-none" aria-live="polite">
           <p class="small text-success mb-2 mb-md-3" id="result-hint"></p>
+          <div id="validation-errors" class="d-none mb-2">
+            <div class="small fw-bold text-danger">Замечания проверки шаблона</div>
+            <ul id="validation-errors-list" class="validation-list mb-2 ps-3"></ul>
+          </div>
           <button type="button" class="btn btn-success btn-lg w-100" id="download">Скачать результат</button>
+          <button type="button" class="btn btn-outline-warning w-100 mt-2 d-none" id="download-force">
+            Скачать с замечаниями
+          </button>
         </div>
 
         <div id="status" class="d-none mt-3" role="status"></div>
@@ -204,12 +217,15 @@
     const resultBlock = document.getElementById('result-block');
     const resultHint = document.getElementById('result-hint');
     const downloadBtn = document.getElementById('download');
+    const downloadForceBtn = document.getElementById('download-force');
+    const validationErrorsEl = document.getElementById('validation-errors');
+    const validationErrorsList = document.getElementById('validation-errors-list');
     const statusEl = document.getElementById('status');
     const reportMonth = document.getElementById('report-month');
     const reportYear = document.getElementById('report-year');
     const outputNamePreview = document.getElementById('output-name-preview');
 
-    const MONTH_SLUG = ['', 'январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+    const MONTH_SLUG = ['', 'jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
     const MONTH_LABEL = ['', 'Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
     const steps = {
       dsp: document.getElementById('step-dsp'),
@@ -220,6 +236,65 @@
 
     let partners = [], selectedPartnerId = '', listHighlight = -1;
     let resultBlob = null, resultName = 'result_dsp.xlsx';
+    let validationErrors = [];
+
+    const parseValidationHeader = value => {
+      if (!value) return [];
+      try {
+        const parsed = JSON.parse(atob(value));
+        return Array.isArray(parsed) ? parsed : [];
+      } catch (_) {
+        return [];
+      }
+    };
+
+    const parseApiErrorBody = (buffer, status) => {
+      let msg = `Ошибка ${status}`;
+      if (!buffer || !buffer.byteLength) return msg;
+      const text = new TextDecoder().decode(buffer);
+      if (!text) return msg;
+      try {
+        const err = JSON.parse(text);
+        if (typeof err.detail === 'string') return err.detail;
+        if (Array.isArray(err.detail)) {
+          return err.detail
+            .map(d => (typeof d === 'string' ? d : (d.msg || JSON.stringify(d))))
+            .join('; ');
+        }
+      } catch (_) {
+        return text.length > 300 ? text.slice(0, 300) + '…' : text;
+      }
+      return msg;
+    };
+
+    const parseFilenameFromDisposition = header => {
+      if (!header) return null;
+      const star = header.match(/filename\*=UTF-8''([^;\n]+)/i);
+      if (star) {
+        try { return decodeURIComponent(star[1].trim()); } catch (_) { return star[1].trim(); }
+      }
+      const plain = header.match(/filename="?([^";\n]+)"?/i);
+      return plain ? plain[1].trim() : null;
+    };
+
+    const renderValidationErrors = errors => {
+      validationErrors = errors;
+      if (!errors.length) {
+        validationErrorsEl.classList.add('d-none');
+        validationErrorsList.innerHTML = '';
+        downloadBtn.classList.remove('d-none');
+        downloadForceBtn.classList.add('d-none');
+        downloadBtn.disabled = !resultBlob;
+        return;
+      }
+      validationErrorsEl.classList.remove('d-none');
+      const shown = errors.slice(0, 30);
+      validationErrorsList.innerHTML = shown.map(e => `<li>${esc(e)}</li>`).join('')
+        + (errors.length > 30 ? `<li class="text-muted">…и ещё ${errors.length - 30}</li>` : '');
+      downloadBtn.classList.add('d-none');
+      downloadForceBtn.classList.remove('d-none');
+      downloadForceBtn.disabled = !resultBlob;
+    };
 
     const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const getP = () => partners.find(x => x.id === selectedPartnerId);
@@ -302,7 +377,7 @@
       const name = buildSampleName();
       const p = getP();
       sampleNamePreview.textContent = name && p && !p.has_profile
-        ? `В папку «Исходные данные» будет сохранён: ${name}`
+        ? `Будет сохранён файл: ${name}`
         : '';
     };
 
@@ -339,6 +414,7 @@
 
     const clearResult = () => {
       resultBlob = null;
+      renderValidationErrors([]);
       showResult(false);
     };
 
@@ -401,7 +477,7 @@
       const badge = p.has_profile
         ? '<span class="badge text-bg-success">Преобразование доступно</span>'
         : '<span class="badge text-bg-secondary">Профиль не настроен</span>';
-      const warn = p.has_profile ? '' : '<div class="alert alert-warning py-2 px-3 mt-2 mb-0 small">Профиль не настроен. Загрузите файл выше и нажмите «Сохранить в «Исходные данные»» — по образцу добавим маппинг.</div>';
+      const warn = p.has_profile ? '' : '<div class="alert alert-warning py-2 px-3 mt-2 mb-0 small">Профиль не настроен. Загрузите файл выше и нажмите «Сохранить маппинг полей» — по образцу добавим маппинг.</div>';
       infoEl.innerHTML = `
         <div class="info-title"><span>Данные из справочника</span>${badge}</div>
         <dl class="row mb-0 small g-1">
@@ -506,7 +582,7 @@
       saveSampleBtn.disabled = true;
       const prevHtml = saveSampleBtn.innerHTML;
       saveSampleBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Сохранение…';
-      setStatus('Сохранение в «Исходные данные»…', 'info');
+      setStatus('Сохранение маппинга полей…', 'info');
 
       const form = new FormData();
       form.append('file', fileInput.files[0]);
@@ -514,12 +590,15 @@
 
       try {
         const res = await fetch('/api/source-data', { method: 'POST', body: form });
-        const data = await res.json().catch(() => ({}));
+        const buffer = await res.arrayBuffer();
         if (!res.ok) {
-          const msg = typeof data.detail === 'string' ? data.detail : `Ошибка ${res.status}`;
-          setStatus(msg, 'error');
+          setStatus(parseApiErrorBody(buffer, res.status), 'error');
           return;
         }
+        let data = {};
+        try {
+          data = JSON.parse(new TextDecoder().decode(buffer));
+        } catch (_) {}
         setStatus(data.message || 'Файл сохранён', 'ok');
       } catch (e) {
         setStatus('Сеть: ' + e.message, 'error');
@@ -549,31 +628,36 @@
 
       try {
         const res = await fetch('/api/transform', { method: 'POST', body: form });
+        const buffer = await res.arrayBuffer();
         if (!res.ok) {
-          let msg = `Ошибка ${res.status}`;
-          try {
-            const err = await res.json();
-            if (typeof err.detail === 'string') msg = err.detail;
-          } catch (_) { msg = await res.text() || msg; }
-          setStatus(msg, 'error');
+          setStatus(parseApiErrorBody(buffer, res.status), 'error');
           setSteps('file');
           return;
         }
-        resultBlob = await res.blob();
+        const mime = res.headers.get('Content-Type')
+          || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        resultBlob = new Blob([buffer], { type: mime });
         const rows = res.headers.get('X-Rows-Written');
         const skippedEmpty = parseInt(res.headers.get('X-Skipped-Empty-Rows') || '0', 10);
         const valErrs = parseInt(res.headers.get('X-Validation-Error-Count') || '0', 10);
-        const m = res.headers.get('Content-Disposition')?.match(/filename="?([^";\n]+)"?/i);
-        resultName = m ? decodeURIComponent(m[1].trim()) : buildOutputName() || 'result_dsp.xlsx';
+        const valList = parseValidationHeader(res.headers.get('X-Validation-Errors'));
+        resultName = parseFilenameFromDisposition(res.headers.get('Content-Disposition'))
+          || buildOutputName() || 'result_dsp.xlsx';
 
         const parts = [];
         if (rows) parts.push(`Записано строк: ${rows}`);
         parts.push(`Пустых строк во входе (пропущено): ${skippedEmpty}`);
-        let hint = parts.join(' · ') + '. Нажмите кнопку ниже для скачивания.';
+        let hint = parts.join(' · ');
+        if (valErrs > 0) {
+          hint += '. Исправьте замечания ниже или скачайте файл с оговоркой.';
+        } else {
+          hint += '. Нажмите кнопку ниже для скачивания.';
+        }
         showResult(true, hint);
+        renderValidationErrors(valList.length ? valList : (valErrs > 0 ? [`Всего замечаний: ${valErrs}`] : []));
 
         if (valErrs > 0) {
-          setStatus(`Готово. Замечаний проверки шаблона: ${valErrs} (часто из‑за пустых полей во входе).`, 'warn');
+          setStatus(`Готово. Замечаний проверки: ${valErrs}.`, 'warn');
         } else {
           setStatus('Преобразование завершено успешно.', 'ok');
         }
@@ -586,7 +670,7 @@
       }
     });
 
-    downloadBtn.addEventListener('click', () => {
+    const triggerDownload = () => {
       if (!resultBlob) return;
       const u = URL.createObjectURL(resultBlob);
       const a = document.createElement('a');
@@ -594,13 +678,19 @@
       a.download = resultName;
       a.click();
       URL.revokeObjectURL(u);
-    });
+    };
+
+    downloadBtn.addEventListener('click', triggerDownload);
+    downloadForceBtn.addEventListener('click', triggerDownload);
 
     initReportPeriod();
 
     fetch('/api/partners').then(r => r.json()).then(d => {
       partners = (d.partners || []).slice().sort((a, b) => a.display_name.localeCompare(b.display_name, 'ru'));
       if (!partners.length) return setStatus('Справочник DSP пуст', 'error');
+      if ((d.warnings || []).length) {
+        setStatus('Справочник: ' + d.warnings.join('; '), 'warn');
+      }
       const preferred = partners.find(p => p.has_profile) || partners[0];
       selectPartner(preferred);
       setSteps('dsp');
