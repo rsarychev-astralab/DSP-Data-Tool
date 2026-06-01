@@ -1,0 +1,7 @@
+.venv
+__pycache__
+.git
+.DS_Store
+Исходные данные/*.xlsx
+Результат обработки/*.xlsx
+*.pyc

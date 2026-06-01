@@ -1,0 +1,28 @@
+id: otm
+display_name: OTM
+
+source:
+  sheet: Sheet1
+  data_from_row: 2
+
+column_map:
+  erid: 0
+  impressions: 1
+  amount: 2
+  contract_no: 3
+  contract_date: 4
+  contract_type: 5
+  contract_subject: 6
+  activity_type: 7
+  customer_type: 10
+  customer_name: 11
+  customer_inn: 12
+  contractor_type: 13
+  contractor_name: 14
+  contractor_inn: 15
+  customer_reg_no: 17
+  customer_oksm: 20
+  contractor_reg_no: 22
+  contractor_oksm: 25
+
+constants: {}

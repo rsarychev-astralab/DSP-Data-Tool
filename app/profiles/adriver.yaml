@@ -1,0 +1,27 @@
+id: adriver
+display_name: adriver
+
+source:
+  sheet: Отчет
+  data_from_row: 2
+
+column_map:
+  erid: 0
+  customer_name: 1
+  customer_inn: 2
+  customer_type: 3
+  customer_oksm: 4
+  customer_reg_no: 5
+  contractor_name: 6
+  contractor_inn: 7
+  contractor_type: 8
+  contractor_oksm: 9
+  contractor_reg_no: 10
+  contract_no: 11
+  contract_date: 12
+  contract_type: 13
+  contract_subject: 14
+  activity_type: 15
+  amount: 17
+
+constants: {}

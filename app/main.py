@@ -1,5 +1,5 @@
 from io import BytesIO
-from pathlib import Path
+from urllib.parse import quote
 
 from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, Response
@@ -9,9 +9,15 @@ from app.catalog import get_catalog_entry, load_dsp_catalog
 from app.config import ROOT, SPRAVKA_DSP_PATH, STATIC_DIR, TEMPLATE_PATH
 from app.engine.transform import transform_source
 from app.profiles.loader import has_transform_profile, load_profile
+from app.reporting import build_output_filename, validate_report_period
 from app.validation.validate import validate_workbook_bytes
 
 app = FastAPI(title="DSP Transform", version="0.1.0")
+
+
+def _content_disposition(filename: str) -> str:
+    encoded = quote(filename, safe="")
+    return f"attachment; filename=\"{filename}\"; filename*=UTF-8''{encoded}"
 
 if STATIC_DIR.exists():
     app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
@@ -48,6 +54,8 @@ def api_partners():
 async def api_transform(
     file: UploadFile = File(...),
     partner_id: str = Form(...),
+    report_month: int = Form(...),
+    report_year: int = Form(...),
 ):
     if not file.filename or not file.filename.lower().endswith((".xlsx", ".xlsm")):
         raise HTTPException(400, "Нужен файл .xlsx")
@@ -62,11 +70,16 @@ async def api_transform(
             f"Профиль преобразования для «{entry.display_name}» ещё не настроен.",
         )
 
+    try:
+        validate_report_period(report_month, report_year)
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+
     content = await file.read()
     if len(content) > 50 * 1024 * 1024:
         raise HTTPException(400, "Файл больше 50 МБ")
 
-    out_name = f"{Path(file.filename).stem}_dsp.xlsx"
+    out_name = build_output_filename(partner_id, report_month, report_year)
     try:
         result = transform_source(
             BytesIO(content),
@@ -84,7 +97,7 @@ async def api_transform(
 
     validation_errors = validate_workbook_bytes(result.output_bytes)
     headers = {
-        "Content-Disposition": f'attachment; filename="{out_name}"',
+        "Content-Disposition": _content_disposition(out_name),
         "X-Rows-Written": str(result.rows_written),
         "X-Skipped-Empty-Rows": str(result.skipped_empty_rows),
         "X-Validation-Error-Count": str(len(validation_errors)),

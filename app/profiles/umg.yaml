@@ -1,0 +1,25 @@
+id: umg
+display_name: umg
+
+source:
+  sheet: Sheet1
+  data_from_row: 2
+
+column_map:
+  erid: 0
+  impressions: 1
+  amount: 2
+  customer_type: 5
+  customer_inn: 6
+  customer_name: 7
+  contractor_name: 8
+  contractor_inn: 9
+  contractor_type: 10
+  contract_no: 11
+  contract_date: 12
+  contract_type: 13
+  contract_subject: 14
+  activity_type: 15
+  vat_included: 17
+
+constants: {}

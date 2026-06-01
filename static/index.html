@@ -9,17 +9,12 @@
   <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
-    /* Тема в духе порталов ГРЧЦ / ЕРИР: тёмно-синий, светлый фон, сдержанные формы */
     :root {
       --bs-primary: #1a4a7a;
       --bs-primary-rgb: 26, 74, 122;
       --bs-success: #2d6a4f;
-      --bs-success-rgb: 45, 106, 79;
       --bs-body-bg: #eef1f6;
-      --bs-body-color: #1f2937;
-      --bs-border-color: #c5cdd8;
       --bs-border-radius: 4px;
-      --bs-border-radius-sm: 3px;
       --bs-font-sans-serif: "PT Sans", "Segoe UI", system-ui, sans-serif;
       --erir-header: #153d66;
     }
@@ -28,48 +23,89 @@
       background: linear-gradient(180deg, var(--erir-header) 0%, #1a4a7a 100%);
       border-bottom: 3px solid #0f2d4a;
     }
-    .app-header .navbar-brand { font-weight: 700; letter-spacing: 0.02em; }
     .app-header .subtitle { font-size: 0.8125rem; opacity: 0.85; }
-    main { max-width: 40rem; }
-    .card {
-      border: 1px solid #d4dbe5;
-      border-radius: var(--bs-border-radius);
-      box-shadow: 0 1px 3px rgba(15, 45, 74, 0.08);
+    main { max-width: 44rem; }
+    .card { border: 1px solid #d4dbe5; box-shadow: 0 1px 3px rgba(15, 45, 74, 0.08); }
+    .card-header { background: #f8fafc; font-weight: 700; color: var(--erir-header); }
+    .form-label { font-weight: 700; color: #374151; font-size: 0.875rem; }
+    .steps {
+      display: flex;
+      gap: 0.35rem;
+      flex-wrap: wrap;
+      margin-bottom: 1.25rem;
     }
-    .card-header {
-      background: #f8fafc;
-      border-bottom: 1px solid #e2e8f0;
+    .step {
+      flex: 1 1 auto;
+      min-width: 4.5rem;
+      text-align: center;
+      font-size: 0.75rem;
+      color: #6b7280;
+      padding: 0.35rem 0.5rem;
+      border-radius: var(--bs-border-radius);
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+    }
+    .step.active { background: #e8f0f8; color: var(--erir-header); border-color: #b8cfe8; font-weight: 700; }
+    .step.done { background: #ecfdf5; color: #166534; border-color: #bbf7d0; }
+    .combobox-list { max-height: 14rem; overflow-y: auto; }
+    .combobox-list .dropdown-item.active,
+    .combobox-list .dropdown-item:hover { background: #e8f0f8; color: #153d66; }
+    .info-panel .info-title {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5rem;
+      margin-bottom: 0.5rem;
       font-weight: 700;
       color: var(--erir-header);
-      font-size: 0.9375rem;
+      font-size: 0.875rem;
     }
-    .form-label { font-weight: 700; color: #374151; font-size: 0.875rem; }
-    .combobox .form-control:focus {
+    .info-panel dt { font-weight: 700; color: #4b5563; font-size: 0.8125rem; }
+    .drop-zone {
+      border: 2px dashed #c5cdd8;
+      border-radius: var(--bs-border-radius);
+      padding: 1.25rem 1rem;
+      text-align: center;
+      background: #fafbfc;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+    }
+    .drop-zone:hover, .drop-zone.dragover {
       border-color: var(--bs-primary);
-      box-shadow: 0 0 0 0.2rem rgba(var(--bs-primary-rgb), 0.2);
+      background: #f0f6fc;
     }
-    .combobox-list {
-      max-height: 14rem;
-      overflow-y: auto;
-      border-radius: var(--bs-border-radius-sm);
+    .drop-zone.has-file { border-style: solid; border-color: #94b8d9; background: #fff; text-align: left; }
+    .drop-zone input[type=file] { display: none; }
+    .file-meta { font-size: 0.875rem; word-break: break-all; }
+    .file-meta .name { font-weight: 700; color: #1f2937; }
+    .file-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 0.5rem;
     }
-    .combobox-list .dropdown-item.active,
-    .combobox-list .dropdown-item:hover {
-      background-color: #e8f0f8;
-      color: #153d66;
+    .file-row .file-info { flex: 1; min-width: 0; }
+    .file-remove {
+      flex-shrink: 0;
+      margin: -0.25rem -0.25rem 0 0;
+      opacity: 0.55;
     }
-    .info-panel dt { font-weight: 700; color: #4b5563; }
-    .info-panel dd { margin-bottom: 0.35rem; }
-    #status:not(.d-none) { font-size: 0.875rem; }
-    .btn-primary { --bs-btn-border-color: #153d66; }
-    .processing .spinner-border { width: 1rem; height: 1rem; }
+    .file-remove:hover { opacity: 1; }
+    .result-block {
+      border: 1px solid #bbf7d0;
+      background: #f0fdf4;
+      border-radius: var(--bs-border-radius);
+      padding: 1rem;
+    }
+    .result-block.d-none { display: none !important; }
+    #download { font-weight: 700; }
   </style>
 </head>
 <body class="d-flex flex-column">
   <header class="app-header navbar navbar-dark py-3 mb-4">
     <div class="container">
       <span class="navbar-brand mb-0 h1 fs-5">Преобразование данных DSP</span>
-      <div class="subtitle text-white-50 mt-1">Приведение выгрузок партнёров к шаблону загрузки</div>
+      <div class="subtitle text-white-50 mt-1">Выгрузка партнёра → шаблон загрузки</div>
     </div>
   </header>
 
@@ -77,37 +113,74 @@
     <div class="card">
       <div class="card-header">Загрузка и преобразование</div>
       <div class="card-body">
-        <p class="text-muted small mb-4">Выберите DSP, укажите файл выгрузки, выполните преобразование и скачайте результат.</p>
+        <nav class="steps" aria-label="Шаги">
+          <div class="step active" id="step-dsp">1. DSP</div>
+          <div class="step" id="step-file">2. Файл</div>
+          <div class="step" id="step-run">3. Обработка</div>
+          <div class="step" id="step-dl">4. Скачать</div>
+        </nav>
 
-        <div class="mb-3">
-          <label for="partner-search" class="form-label">DSP</label>
+        <section class="mb-3" aria-labelledby="lbl-dsp">
+          <label for="partner-search" class="form-label" id="lbl-dsp">DSP</label>
           <div class="combobox position-relative">
             <input type="text" class="form-control" id="partner-search" autocomplete="off"
-                   placeholder="Введите название…" aria-autocomplete="list" aria-controls="partner-list" />
+                   placeholder="Начните вводить название…" />
             <ul id="partner-list" class="dropdown-menu combobox-list w-100 shadow-sm" hidden></ul>
           </div>
+        </section>
+
+        <div id="info" class="info-panel alert alert-light border mb-3 d-none" role="region" aria-live="polite"></div>
+
+        <section class="mb-3" aria-labelledby="lbl-period">
+          <span class="form-label d-block" id="lbl-period">Отчётный период</span>
+          <div class="row g-2">
+            <div class="col-7">
+              <label for="report-month" class="form-label small text-muted mb-1">Месяц</label>
+              <select class="form-select" id="report-month" required></select>
+            </div>
+            <div class="col-5">
+              <label for="report-year" class="form-label small text-muted mb-1">Год</label>
+              <select class="form-select" id="report-year" required></select>
+            </div>
+          </div>
+          <div class="form-text" id="output-name-preview"></div>
+        </section>
+
+        <section class="mb-4" aria-labelledby="lbl-file">
+          <span class="form-label d-block" id="lbl-file">Файл выгрузки</span>
+          <div class="drop-zone" id="drop-zone" tabindex="0" role="button"
+               aria-label="Выберите или перетащите файл Excel">
+            <input type="file" id="file" accept=".xlsx,.xlsm" />
+            <div id="drop-placeholder">
+              <div class="text-muted small">Перетащите файл сюда или нажмите для выбора</div>
+              <div class="text-muted small mt-1">Формат: .xlsx, .xlsm</div>
+            </div>
+            <div id="drop-selected" class="file-meta d-none">
+              <div class="file-row">
+                <div class="file-info">
+                  <div class="name" id="file-name"></div>
+                  <div class="text-muted small" id="file-size"></div>
+                </div>
+                <button type="button" class="btn-close file-remove" id="file-remove"
+                        aria-label="Удалить файл" title="Удалить файл"></button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <div class="d-grid gap-2 mb-2">
+          <button type="button" class="btn btn-primary btn-lg" id="submit" disabled>Преобразовать</button>
         </div>
 
-        <div id="info" class="info-panel alert alert-light border mb-3 d-none" role="region"></div>
-
-        <div class="mb-4">
-          <label for="file" class="form-label">Файл выгрузки (.xlsx)</label>
-          <input class="form-control" type="file" id="file" accept=".xlsx,.xlsm" required>
+        <div id="result-block" class="result-block d-none" aria-live="polite">
+          <p class="small text-success mb-2 mb-md-3" id="result-hint"></p>
+          <button type="button" class="btn btn-success btn-lg w-100" id="download">Скачать результат</button>
         </div>
 
-        <div class="d-grid gap-2">
-          <button type="button" class="btn btn-primary btn-lg" id="submit">Преобразовать</button>
-          <button type="button" class="btn btn-success btn-lg" id="download" hidden>Скачать результат</button>
-        </div>
-
-        <div id="status" class="d-none" role="status"></div>
+        <div id="status" class="d-none mt-3" role="status"></div>
       </div>
     </div>
   </main>
-
-  <footer class="container pb-4">
-    <p class="text-muted small mb-0">Локальный сервис преобразования · стиль интерфейса ориентирован на порталы реестра (ЕРИР)</p>
-  </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
@@ -115,14 +188,107 @@
     const partnerList = document.getElementById('partner-list');
     const infoEl = document.getElementById('info');
     const fileInput = document.getElementById('file');
+    const dropZone = document.getElementById('drop-zone');
+    const dropPlaceholder = document.getElementById('drop-placeholder');
+    const dropSelected = document.getElementById('drop-selected');
+    const fileNameEl = document.getElementById('file-name');
+    const fileSizeEl = document.getElementById('file-size');
+    const fileRemoveBtn = document.getElementById('file-remove');
     const submitBtn = document.getElementById('submit');
+    const resultBlock = document.getElementById('result-block');
+    const resultHint = document.getElementById('result-hint');
     const downloadBtn = document.getElementById('download');
     const statusEl = document.getElementById('status');
+    const reportMonth = document.getElementById('report-month');
+    const reportYear = document.getElementById('report-year');
+    const outputNamePreview = document.getElementById('output-name-preview');
 
-    let partners = [], selectedPartnerId = '', listHighlight = -1, resultBlob = null, resultName = 'result_dsp.xlsx';
+    const MONTH_SLUG = ['', 'январь','февраль','март','апрель','май','июнь','июль','август','сентябрь','октябрь','ноябрь','декабрь'];
+    const MONTH_LABEL = ['', 'Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
+    const steps = {
+      dsp: document.getElementById('step-dsp'),
+      file: document.getElementById('step-file'),
+      run: document.getElementById('step-run'),
+      dl: document.getElementById('step-dl'),
+    };
+
+    let partners = [], selectedPartnerId = '', listHighlight = -1;
+    let resultBlob = null, resultName = 'result_dsp.xlsx';
 
     const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     const getP = () => partners.find(x => x.id === selectedPartnerId);
+
+    const setSteps = (active) => {
+      const order = ['dsp', 'file', 'run', 'dl'];
+      const idx = order.indexOf(active);
+      order.forEach((key, i) => {
+        steps[key].classList.remove('active', 'done');
+        if (i < idx) steps[key].classList.add('done');
+        else if (i === idx) steps[key].classList.add('active');
+      });
+    };
+
+    const formatSize = bytes => {
+      if (bytes < 1024) return bytes + ' Б';
+      if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' КБ';
+      return (bytes / (1024 * 1024)).toFixed(1) + ' МБ';
+    };
+
+    const updateFileUI = () => {
+      const file = fileInput.files[0];
+      if (file) {
+        dropZone.classList.add('has-file');
+        dropPlaceholder.classList.add('d-none');
+        dropSelected.classList.remove('d-none');
+        fileNameEl.textContent = file.name;
+        fileSizeEl.textContent = formatSize(file.size);
+        setSteps('file');
+      } else {
+        dropZone.classList.remove('has-file');
+        dropPlaceholder.classList.remove('d-none');
+        dropSelected.classList.add('d-none');
+        if (selectedPartnerId) setSteps('dsp');
+      }
+      updateSubmitState();
+    };
+
+    const buildOutputName = () => {
+      if (!selectedPartnerId || !reportMonth.value || !reportYear.value) return '';
+      const m = parseInt(reportMonth.value, 10);
+      return `${selectedPartnerId}_${MONTH_SLUG[m]}_${reportYear.value}.xlsx`;
+    };
+
+    const updateOutputPreview = () => {
+      const name = buildOutputName();
+      outputNamePreview.textContent = name
+        ? `Имя файла после обработки: ${name}`
+        : '';
+    };
+
+    const initReportPeriod = () => {
+      const now = new Date();
+      reportMonth.innerHTML = MONTH_LABEL.slice(1).map((label, i) =>
+        `<option value="${i + 1}">${label}</option>`
+      ).join('');
+      reportMonth.value = String(now.getMonth() + 1);
+
+      const y = now.getFullYear();
+      reportYear.innerHTML = '';
+      for (let year = y - 3; year <= y + 1; year++) {
+        const opt = document.createElement('option');
+        opt.value = String(year);
+        opt.textContent = String(year);
+        reportYear.appendChild(opt);
+      }
+      reportYear.value = String(y);
+      updateOutputPreview();
+    };
+
+    const updateSubmitState = () => {
+      const p = getP();
+      submitBtn.disabled = !(p?.has_profile && fileInput.files[0]);
+      updateOutputPreview();
+    };
 
     const setStatus = (text, kind) => {
       if (!text) {
@@ -133,33 +299,29 @@
       const cls = kind === 'error' ? 'alert-danger'
         : kind === 'warn' ? 'alert-warning'
         : kind === 'ok' ? 'alert-success' : 'alert-info';
-      statusEl.className = `alert mt-3 mb-0 py-2 ${cls}`;
+      statusEl.className = `alert py-2 mb-0 ${cls}`;
       statusEl.textContent = text;
     };
 
-    const showDownload = (show) => {
-      downloadBtn.hidden = !show;
-      downloadBtn.classList.toggle('d-none', !show);
-      downloadBtn.disabled = !show;
+    const showResult = (show, hint = '') => {
+      resultBlock.classList.toggle('d-none', !show);
+      if (hint) resultHint.textContent = hint;
+      if (show) setSteps('dl');
+      else if (fileInput.files[0] && selectedPartnerId) setSteps('file');
     };
 
-    const clearResult = () => { resultBlob = null; showDownload(false); };
+    const clearResult = () => {
+      resultBlob = null;
+      showResult(false);
+    };
 
     const filter = q => {
       const n = q.trim().toLowerCase();
       return n ? partners.filter(p => p.display_name.toLowerCase().includes(n)) : partners.slice();
     };
 
-    const openList = () => {
-      partnerList.hidden = false;
-      partnerList.classList.add('show');
-    };
-
-    const closeList = () => {
-      partnerList.hidden = true;
-      partnerList.classList.remove('show');
-      listHighlight = -1;
-    };
+    const openList = () => { partnerList.hidden = false; partnerList.classList.add('show'); };
+    const closeList = () => { partnerList.hidden = true; partnerList.classList.remove('show'); listHighlight = -1; };
 
     const renderList = items => {
       partnerList.innerHTML = '';
@@ -197,39 +359,83 @@
       if (selectedPartnerId && getP()?.display_name.toLowerCase() !== q) {
         selectedPartnerId = '';
         renderInfo(null);
-        submitBtn.disabled = true;
       }
+      updateSubmitState();
       return !!selectedPartnerId;
     };
 
     const renderInfo = p => {
       if (!p) {
         infoEl.classList.add('d-none');
-        infoEl.hidden = true;
-        submitBtn.disabled = true;
+        updateSubmitState();
         return;
       }
       const ord = p.report_to_ord === true ? 'Да' : p.report_to_ord === false ? 'Нет' : '—';
-      const warn = p.has_profile ? '' : '<div class="alert alert-warning py-2 px-3 mt-2 mb-0 small">Преобразование недоступно — нужен образец выгрузки.</div>';
-      infoEl.innerHTML = `<dl class="row mb-0 small">
-        <dt class="col-sm-4">DSP ID</dt><dd class="col-sm-8">${esc((p.dsp_ids||[]).join(', '))}</dd>
-        <dt class="col-sm-4">Договор</dt><dd class="col-sm-8">${esc(p.contract||'—')}</dd>
-        <dt class="col-sm-4">ОРД</dt><dd class="col-sm-8">${ord}</dd>
-        <dt class="col-sm-4">URL</dt><dd class="col-sm-8">${p.url ? `<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.url)}</a>` : '—'}</dd>
-      </dl>${warn}`;
+      const badge = p.has_profile
+        ? '<span class="badge text-bg-success">Преобразование доступно</span>'
+        : '<span class="badge text-bg-secondary">Профиль не настроен</span>';
+      const warn = p.has_profile ? '' : '<div class="alert alert-warning py-2 px-3 mt-2 mb-0 small">Пришлите образец выгрузки — добавим маппинг для этого DSP.</div>';
+      infoEl.innerHTML = `
+        <div class="info-title"><span>Данные из справочника</span>${badge}</div>
+        <dl class="row mb-0 small g-1">
+          <dt class="col-12 col-md-5">DSP ID</dt><dd class="col-12 col-md-7">${esc((p.dsp_ids||[]).join(', '))}</dd>
+          <dt class="col-12 col-md-5">Договор</dt><dd class="col-12 col-md-7">${esc(p.contract||'—')}</dd>
+          <dt class="col-12 col-md-5">Отчитываемся в ОРД</dt><dd class="col-12 col-md-7">${ord}</dd>
+          <dt class="col-12 col-md-5">URL</dt><dd class="col-12 col-md-7">${p.url ? `<a href="${esc(p.url)}" target="_blank" rel="noopener">${esc(p.url)}</a>` : '—'}</dd>
+        </dl>${warn}`;
       infoEl.classList.remove('d-none');
-      infoEl.hidden = false;
-      submitBtn.disabled = !p.has_profile;
+      setSteps(fileInput.files[0] ? 'file' : 'dsp');
+      updateSubmitState();
     };
 
-    const onPartnerChange = () => { clearResult(); setStatus('', ''); renderInfo(getP()); };
+    const onPartnerChange = () => { clearResult(); setStatus('', ''); renderInfo(getP()); updateOutputPreview(); };
+
+    reportMonth.addEventListener('change', () => { updateOutputPreview(); });
+    reportYear.addEventListener('change', () => { updateOutputPreview(); });
+
+    const clearFile = () => {
+      fileInput.value = '';
+      updateFileUI();
+      clearResult();
+      setStatus('', '');
+    };
+
+    dropZone.addEventListener('click', e => {
+      if (e.target.closest('#file-remove')) return;
+      fileInput.click();
+    });
+    dropZone.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); fileInput.click(); }
+    });
+    fileRemoveBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      clearFile();
+    });
+    fileInput.addEventListener('change', () => { updateFileUI(); clearResult(); setStatus('', ''); });
+
+    ['dragenter', 'dragover'].forEach(ev => {
+      dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+    });
+    ['dragleave', 'drop'].forEach(ev => {
+      dropZone.addEventListener(ev, e => { e.preventDefault(); dropZone.classList.remove('dragover'); });
+    });
+    dropZone.addEventListener('drop', e => {
+      const f = e.dataTransfer?.files?.[0];
+      if (f && /\.xlsm?$/i.test(f.name)) {
+        const dt = new DataTransfer();
+        dt.items.add(f);
+        fileInput.files = dt.files;
+        updateFileUI();
+        clearResult();
+        setStatus('', '');
+      } else setStatus('Нужен файл .xlsx или .xlsm', 'error');
+    });
 
     partnerSearch.addEventListener('focus', () => { renderList(filter(partnerSearch.value)); openList(); });
     partnerSearch.addEventListener('input', () => {
       clearResult(); setStatus('', '');
-      const f = filter(partnerSearch.value);
-      renderList(f);
-      listHighlight = f.length ? 0 : -1;
+      renderList(filter(partnerSearch.value));
+      listHighlight = filter(partnerSearch.value).length ? 0 : -1;
       openList();
       syncInput();
     });
@@ -237,7 +443,6 @@
       closeList();
       if (!syncInput() && partnerSearch.value.trim()) setStatus('Выберите DSP из списка', 'error');
     }, 150));
-
     partnerSearch.addEventListener('keydown', e => {
       const items = partnerList.querySelectorAll('.dropdown-item');
       if (e.key === 'ArrowDown') {
@@ -266,8 +471,6 @@
       } else if (e.key === 'Escape') closeList();
     });
 
-    fileInput.addEventListener('change', () => { clearResult(); setStatus('', ''); });
-
     submitBtn.addEventListener('click', async () => {
       if (!fileInput.files[0]) return setStatus('Выберите файл', 'error');
       if (!syncInput()) return setStatus('Выберите DSP из списка', 'error');
@@ -275,14 +478,16 @@
 
       clearResult();
       submitBtn.disabled = true;
-      showDownload(false);
-      const prevLabel = submitBtn.textContent;
-      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span>Обработка…';
-      setStatus('', '');
+      const prevHtml = submitBtn.innerHTML;
+      submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Обработка…';
+      setStatus('Идёт преобразование, подождите…', 'info');
+      setSteps('run');
 
       const form = new FormData();
       form.append('file', fileInput.files[0]);
       form.append('partner_id', selectedPartnerId);
+      form.append('report_month', reportMonth.value);
+      form.append('report_year', reportYear.value);
 
       try {
         const res = await fetch('/api/transform', { method: 'POST', body: form });
@@ -291,26 +496,35 @@
           try {
             const err = await res.json();
             if (typeof err.detail === 'string') msg = err.detail;
-          } catch (_) {
-            msg = await res.text() || msg;
-          }
+          } catch (_) { msg = await res.text() || msg; }
           setStatus(msg, 'error');
+          setSteps('file');
           return;
         }
         resultBlob = await res.blob();
         const rows = res.headers.get('X-Rows-Written');
+        const skippedEmpty = parseInt(res.headers.get('X-Skipped-Empty-Rows') || '0', 10);
         const valErrs = parseInt(res.headers.get('X-Validation-Error-Count') || '0', 10);
         const m = res.headers.get('Content-Disposition')?.match(/filename="?([^";\n]+)"?/i);
-        resultName = m ? decodeURIComponent(m[1].trim()) : fileInput.files[0].name.replace(/\.xlsx?$/i, '') + '_dsp.xlsx';
-        showDownload(true);
-        let msg = rows ? `Готово: ${rows} строк. Нажмите «Скачать результат».` : 'Готово. Нажмите «Скачать результат».';
-        setStatus(msg, valErrs > 0 ? 'warn' : 'ok');
-        if (valErrs > 0) statusEl.textContent += ` Замечаний проверки шаблона: ${valErrs}.`;
+        resultName = m ? decodeURIComponent(m[1].trim()) : buildOutputName() || 'result_dsp.xlsx';
+
+        const parts = [];
+        if (rows) parts.push(`Записано строк: ${rows}`);
+        parts.push(`Пустых строк во входе (пропущено): ${skippedEmpty}`);
+        let hint = parts.join(' · ') + '. Нажмите кнопку ниже для скачивания.';
+        showResult(true, hint);
+
+        if (valErrs > 0) {
+          setStatus(`Готово. Замечаний проверки шаблона: ${valErrs} (часто из‑за пустых полей во входе).`, 'warn');
+        } else {
+          setStatus('Преобразование завершено успешно.', 'ok');
+        }
       } catch (e) {
         setStatus('Сеть: ' + e.message, 'error');
+        setSteps('file');
       } finally {
-        submitBtn.innerHTML = prevLabel;
-        submitBtn.disabled = !getP()?.has_profile;
+        submitBtn.innerHTML = prevHtml;
+        updateSubmitState();
       }
     });
 
@@ -324,11 +538,14 @@
       URL.revokeObjectURL(u);
     });
 
+    initReportPeriod();
+
     fetch('/api/partners').then(r => r.json()).then(d => {
       partners = (d.partners || []).slice().sort((a, b) => a.display_name.localeCompare(b.display_name, 'ru'));
       if (!partners.length) return setStatus('Справочник DSP пуст', 'error');
-      const preferred = partners.find(p => p.id === 'buzzoola') || partners.find(p => p.has_profile) || partners[0];
+      const preferred = partners.find(p => p.has_profile) || partners[0];
       selectPartner(preferred);
+      setSteps('dsp');
     }).catch(e => setStatus('Ошибка загрузки списка DSP: ' + e.message, 'error'));
   </script>
 </body>

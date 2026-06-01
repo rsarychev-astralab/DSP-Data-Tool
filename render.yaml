@@ -1,0 +1,12 @@
+# https://render.com — бесплатный Web Service (засыпает без трафика ~15 мин)
+services:
+  - type: web
+    name: dsp-transform
+    runtime: python
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.13.0"

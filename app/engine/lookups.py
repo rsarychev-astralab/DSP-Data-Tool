@@ -4,7 +4,9 @@ CONTRACT_TYPE = {
     "дополнительноесоглашение": "Additional",
     "original": "Original",
     "intermediary": "Intermediary",
+    "intermediarycontract": "Intermediary",
     "additional": "Additional",
+    "contract": "Original",
 }
 
 SUBJECT_TYPE = {
@@ -18,6 +20,7 @@ SUBJECT_TYPE = {
     "mediation": "Mediation",
     "representation": "Representation",
     "other": "Other",
+    "orgdistribution": "DistributionOrganization",
 }
 
 ACTIVITY_TYPE = {
@@ -36,7 +39,10 @@ ACTIVITY_TYPE = {
 PARTY_TYPE = {
     "юрлицо": "LegalPerson",
     "юридическоелицо": "LegalPerson",
+    "юрлицорф": "LegalPerson",
+    "ul": "LegalPerson",
     "ип": "IndividualEntrepreneur",
+    "ip": "IndividualEntrepreneur",
     "физлицо": "PhysicalPerson",
     "иностранноеюрлицо": "ForeignLegalPerson",
     "иностранноефизлицо": "ForeignPhysicalPerson",
