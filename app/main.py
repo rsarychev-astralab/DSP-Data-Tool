@@ -1,3 +1,4 @@
+import os
 from io import BytesIO
 from urllib.parse import quote
 
@@ -6,10 +7,11 @@ from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from app.catalog import get_catalog_entry, load_dsp_catalog
-from app.config import ROOT, SPRAVKA_DSP_PATH, STATIC_DIR, TEMPLATE_PATH
+from app.config import ROOT, SOURCE_DATA_DIR, SPRAVKA_DSP_PATH, STATIC_DIR, TEMPLATE_PATH
 from app.engine.transform import transform_source
 from app.profiles.loader import has_transform_profile, load_profile
 from app.reporting import build_output_filename, validate_report_period
+from app.source_data import save_source_file
 from app.validation.validate import validate_workbook_bytes
 
 app = FastAPI(title="DSP Transform", version="0.1.0")
@@ -47,6 +49,62 @@ def api_partners():
             }
             for e in load_dsp_catalog()
         ]
+    }
+
+
+@app.post("/api/source-data")
+async def api_source_data(
+    file: UploadFile = File(...),
+    partner_id: str = Form(...),
+):
+    if not file.filename:
+        raise HTTPException(400, "Не указано имя файла")
+
+    ext = file.filename.lower()
+    if not ext.endswith((".xlsx", ".xlsm", ".xls")):
+        raise HTTPException(400, "Нужен файл .xlsx, .xlsm или .xls")
+
+    entry = get_catalog_entry(partner_id)
+    if entry is None:
+        raise HTTPException(404, f"DSP не найден в справочнике: {partner_id}")
+
+    if has_transform_profile(partner_id):
+        raise HTTPException(
+            400,
+            f"Для «{entry.display_name}» преобразование уже настроено — загрузка образца не нужна.",
+        )
+
+    content = await file.read()
+    if len(content) > 50 * 1024 * 1024:
+        raise HTTPException(400, "Файл больше 50 МБ")
+
+    try:
+        saved = save_source_file(
+            partner_id,
+            entry.display_name,
+            content,
+            file.filename,
+        )
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+    except OSError as e:
+        raise HTTPException(500, f"Не удалось сохранить файл: {e}") from e
+
+    msg = (
+        f"Файл сохранён: Исходные данные/{saved.filename}"
+        if not saved.replaced
+        else (
+            f"Файл сохранён: Исходные данные/{saved.filename} "
+            "(предыдущая версия переименована с датой в имени)"
+        )
+    )
+    return {
+        "ok": True,
+        "message": msg,
+        "filename": saved.filename,
+        "partner_id": saved.partner_id,
+        "display_name": saved.display_name,
+        "replaced": saved.replaced,
     }
 
 
@@ -119,4 +177,7 @@ def health():
         "spravka": SPRAVKA_DSP_PATH.exists(),
         "dsp_count": len(catalog),
         "profiles_ready": sum(1 for e in catalog if e.has_profile),
+        "source_data_dir": str(SOURCE_DATA_DIR),
+        "source_data_writable": SOURCE_DATA_DIR.exists()
+        and os.access(SOURCE_DATA_DIR, os.W_OK),
     }

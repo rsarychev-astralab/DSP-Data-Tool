@@ -21,3 +21,4 @@ def resolve_template_path() -> Path:
 TEMPLATE_PATH = resolve_template_path()
 SPRAVKA_DIR = ROOT / "Справка"
 SPRAVKA_DSP_PATH = SPRAVKA_DIR / "DSP.xlsx"
+SOURCE_DATA_DIR = ROOT / "Исходные данные"

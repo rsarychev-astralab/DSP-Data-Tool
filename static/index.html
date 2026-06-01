@@ -150,10 +150,10 @@
           <span class="form-label d-block" id="lbl-file">Файл выгрузки</span>
           <div class="drop-zone" id="drop-zone" tabindex="0" role="button"
                aria-label="Выберите или перетащите файл Excel">
-            <input type="file" id="file" accept=".xlsx,.xlsm" />
+            <input type="file" id="file" accept=".xlsx,.xlsm,.xls" />
             <div id="drop-placeholder">
               <div class="text-muted small">Перетащите файл сюда или нажмите для выбора</div>
-              <div class="text-muted small mt-1">Формат: .xlsx, .xlsm</div>
+              <div class="text-muted small mt-1">Формат: .xlsx, .xlsm, .xls</div>
             </div>
             <div id="drop-selected" class="file-meta d-none">
               <div class="file-row">
@@ -170,7 +170,11 @@
 
         <div class="d-grid gap-2 mb-2">
           <button type="button" class="btn btn-primary btn-lg" id="submit" disabled>Преобразовать</button>
+          <button type="button" class="btn btn-outline-secondary" id="save-sample" disabled>
+            Сохранить в «Исходные данные»
+          </button>
         </div>
+        <p class="form-text mb-0" id="sample-name-preview"></p>
 
         <div id="result-block" class="result-block d-none" aria-live="polite">
           <p class="small text-success mb-2 mb-md-3" id="result-hint"></p>
@@ -195,6 +199,8 @@
     const fileSizeEl = document.getElementById('file-size');
     const fileRemoveBtn = document.getElementById('file-remove');
     const submitBtn = document.getElementById('submit');
+    const saveSampleBtn = document.getElementById('save-sample');
+    const sampleNamePreview = document.getElementById('sample-name-preview');
     const resultBlock = document.getElementById('result-block');
     const resultHint = document.getElementById('result-hint');
     const downloadBtn = document.getElementById('download');
@@ -284,10 +290,31 @@
       updateOutputPreview();
     };
 
+    const buildSampleName = () => {
+      if (!selectedPartnerId || !fileInput.files[0]) return '';
+      const ext = (fileInput.files[0].name.match(/\.[^.]+$/i) || ['.xlsx'])[0].toLowerCase();
+      const allowed = ['.xlsx', '.xlsm', '.xls'];
+      const safeExt = allowed.includes(ext) ? ext : '.xlsx';
+      return `${selectedPartnerId}${safeExt}`;
+    };
+
+    const updateSamplePreview = () => {
+      const name = buildSampleName();
+      const p = getP();
+      sampleNamePreview.textContent = name && p && !p.has_profile
+        ? `В папку «Исходные данные» будет сохранён: ${name}`
+        : '';
+    };
+
     const updateSubmitState = () => {
       const p = getP();
-      submitBtn.disabled = !(p?.has_profile && fileInput.files[0]);
+      const hasFile = !!fileInput.files[0];
+      submitBtn.disabled = !(p?.has_profile && hasFile);
+      const sampleAllowed = !!(p && !p.has_profile);
+      saveSampleBtn.classList.toggle('d-none', !sampleAllowed);
+      saveSampleBtn.disabled = !(sampleAllowed && hasFile);
       updateOutputPreview();
+      updateSamplePreview();
     };
 
     const setStatus = (text, kind) => {
@@ -374,7 +401,7 @@
       const badge = p.has_profile
         ? '<span class="badge text-bg-success">Преобразование доступно</span>'
         : '<span class="badge text-bg-secondary">Профиль не настроен</span>';
-      const warn = p.has_profile ? '' : '<div class="alert alert-warning py-2 px-3 mt-2 mb-0 small">Пришлите образец выгрузки — добавим маппинг для этого DSP.</div>';
+      const warn = p.has_profile ? '' : '<div class="alert alert-warning py-2 px-3 mt-2 mb-0 small">Профиль не настроен. Загрузите файл выше и нажмите «Сохранить в «Исходные данные»» — по образцу добавим маппинг.</div>';
       infoEl.innerHTML = `
         <div class="info-title"><span>Данные из справочника</span>${badge}</div>
         <dl class="row mb-0 small g-1">
@@ -421,14 +448,14 @@
     });
     dropZone.addEventListener('drop', e => {
       const f = e.dataTransfer?.files?.[0];
-      if (f && /\.xlsm?$/i.test(f.name)) {
+      if (f && /\.(xlsx|xlsm|xls)$/i.test(f.name)) {
         const dt = new DataTransfer();
         dt.items.add(f);
         fileInput.files = dt.files;
         updateFileUI();
         clearResult();
         setStatus('', '');
-      } else setStatus('Нужен файл .xlsx или .xlsm', 'error');
+      } else setStatus('Нужен файл .xlsx, .xlsm или .xls', 'error');
     });
 
     partnerSearch.addEventListener('focus', () => { renderList(filter(partnerSearch.value)); openList(); });
@@ -469,6 +496,37 @@
           else syncInput();
         }
       } else if (e.key === 'Escape') closeList();
+    });
+
+    saveSampleBtn.addEventListener('click', async () => {
+      if (!fileInput.files[0]) return setStatus('Выберите файл', 'error');
+      if (!syncInput()) return setStatus('Выберите DSP из списка', 'error');
+      if (getP()?.has_profile) return setStatus('Для этого DSP преобразование уже настроено', 'error');
+
+      saveSampleBtn.disabled = true;
+      const prevHtml = saveSampleBtn.innerHTML;
+      saveSampleBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Сохранение…';
+      setStatus('Сохранение в «Исходные данные»…', 'info');
+
+      const form = new FormData();
+      form.append('file', fileInput.files[0]);
+      form.append('partner_id', selectedPartnerId);
+
+      try {
+        const res = await fetch('/api/source-data', { method: 'POST', body: form });
+        const data = await res.json().catch(() => ({}));
+        if (!res.ok) {
+          const msg = typeof data.detail === 'string' ? data.detail : `Ошибка ${res.status}`;
+          setStatus(msg, 'error');
+          return;
+        }
+        setStatus(data.message || 'Файл сохранён', 'ok');
+      } catch (e) {
+        setStatus('Сеть: ' + e.message, 'error');
+      } finally {
+        saveSampleBtn.innerHTML = prevHtml;
+        updateSubmitState();
+      }
     });
 
     submitBtn.addEventListener('click', async () => {
