@@ -1,0 +1,70 @@
+CONTRACT_TYPE = {
+    "договороказанияуслуг": "Original",
+    "посредническийдоговор": "Intermediary",
+    "дополнительноесоглашение": "Additional",
+    "original": "Original",
+    "intermediary": "Intermediary",
+    "additional": "Additional",
+}
+
+SUBJECT_TYPE = {
+    "договорнараспространениерекламы": "Distribution",
+    "договорнаорганизациюраспространениярекламы": "DistributionOrganization",
+    "посредничество": "Mediation",
+    "представительство": "Representation",
+    "иное": "Other",
+    "distribution": "Distribution",
+    "distributionorganization": "DistributionOrganization",
+    "mediation": "Mediation",
+    "representation": "Representation",
+    "other": "Other",
+}
+
+ACTIVITY_TYPE = {
+    "действиявцеляхраспространениярекламы": "Distribution",
+    "иное": "Other",
+    "заключениедоговоров": "Conclude",
+    "коммерческоепредставительство": "Commercial",
+    "distribution": "Distribution",
+    "other": "Other",
+    "conclude": "Conclude",
+    "commercial": "Commercial",
+    "none": "None",
+    "нет": "None",
+}
+
+PARTY_TYPE = {
+    "юрлицо": "LegalPerson",
+    "юридическоелицо": "LegalPerson",
+    "ип": "IndividualEntrepreneur",
+    "физлицо": "PhysicalPerson",
+    "иностранноеюрлицо": "ForeignLegalPerson",
+    "иностранноефизлицо": "ForeignPhysicalPerson",
+    "legalperson": "LegalPerson",
+    "individualentrepreneur": "IndividualEntrepreneur",
+    "physicalperson": "PhysicalPerson",
+    "foreignlegalperson": "ForeignLegalPerson",
+    "foreignphysicalperson": "ForeignPhysicalPerson",
+}
+
+TEMPLATE_COLUMNS = {
+    "erid": 1,
+    "contract_no": 2,
+    "contract_date": 3,
+    "contract_type": 4,
+    "contract_subject": 5,
+    "activity_type": 6,
+    "customer_type": 7,
+    "customer_name": 8,
+    "customer_inn": 9,
+    "customer_reg_no": 10,
+    "customer_oksm": 11,
+    "contractor_type": 12,
+    "contractor_name": 13,
+    "contractor_inn": 14,
+    "contractor_reg_no": 15,
+    "contractor_oksm": 16,
+    "vat_included": 17,
+    "impressions": 18,
+    "amount": 19,
+}

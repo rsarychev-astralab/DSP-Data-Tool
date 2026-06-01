@@ -1,0 +1,14 @@
+---
+description: Правила преобразования выгрузки Buzzoola
+globs:
+  - app/profiles/buzzoola.yaml
+  - "**/buzzoola*.xlsx"
+---
+
+# Buzzoola
+
+Значение **UNKNOWN** во входной выгрузке означает «данных нет»:
+
+- при преобразовании заменять на **пусто** (skip ячейки в шаблоне);
+- **не** записывать `no`, `N/A`, `0` и другие подстановки;
+- настроено в `app/profiles/buzzoola.yaml` → `empty_markers: [UNKNOWN]`.

@@ -1,0 +1,90 @@
+import re
+from dataclasses import dataclass
+from functools import lru_cache
+from pathlib import Path
+
+import openpyxl
+
+from app.config import SPRAVKA_DSP_PATH
+from app.profiles.loader import has_transform_profile, resolve_profile_id
+
+_ID_RE = re.compile(r"[^a-z0-9_]+")
+
+
+def _slug(value: str) -> str:
+    text = str(value).strip().lower().split(",")[0].strip()
+    slug = _ID_RE.sub("_", text).strip("_")
+    return slug or "unknown"
+
+
+@dataclass
+class DspCatalogEntry:
+    id: str
+    display_name: str
+    dsp_ids: list[str]
+    contract: str | None
+    report_to_ord: bool | None
+    url: str | None
+    has_profile: bool
+    profile_id: str | None
+
+
+def _parse_report(val) -> bool | None:
+    if val is None or str(val).strip() == "":
+        return None
+    key = str(val).strip().lower()
+    if key in {"да", "yes", "true", "1"}:
+        return True
+    if key in {"нет", "no", "false", "0"}:
+        return False
+    return None
+
+
+@lru_cache(maxsize=1)
+def load_dsp_catalog() -> list[DspCatalogEntry]:
+    path = SPRAVKA_DSP_PATH
+    if not path.exists():
+        return []
+
+    wb = openpyxl.load_workbook(path, read_only=True, data_only=True)
+    ws = wb["DSP"] if "DSP" in wb.sheetnames else wb.active
+
+    entries: list[DspCatalogEntry] = []
+    for row in ws.iter_rows(min_row=2, values_only=True):
+        if not row or not any(cell is not None and str(cell).strip() for cell in row):
+            continue
+        display_name = str(row[0]).strip() if row[0] is not None else ""
+        dsp_id_raw = str(row[1]).strip() if len(row) > 1 and row[1] is not None else ""
+        if not display_name and not dsp_id_raw:
+            continue
+        dsp_ids = [p.strip() for p in dsp_id_raw.split(",") if p.strip()]
+        catalog_id = _slug(dsp_ids[0] if dsp_ids else display_name)
+        profile_id = resolve_profile_id(catalog_id)
+        has_profile = has_transform_profile(catalog_id)
+        contract = str(row[2]).strip() if len(row) > 2 and row[2] is not None else None
+        url = str(row[4]).strip() if len(row) > 4 and row[4] is not None else None
+        if contract == "":
+            contract = None
+        if url == "":
+            url = None
+        entries.append(
+            DspCatalogEntry(
+                id=catalog_id,
+                display_name=display_name or catalog_id,
+                dsp_ids=dsp_ids or [catalog_id],
+                contract=contract,
+                report_to_ord=_parse_report(row[3] if len(row) > 3 else None),
+                url=url,
+                has_profile=has_profile,
+                profile_id=profile_id if has_profile else None,
+            )
+        )
+    wb.close()
+    return entries
+
+
+def get_catalog_entry(partner_id: str) -> DspCatalogEntry | None:
+    for entry in load_dsp_catalog():
+        if entry.id == partner_id:
+            return entry
+    return None

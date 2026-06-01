@@ -1,0 +1,35 @@
+id: buzzoola
+display_name: buzzoola
+
+# UNKNOWN во входе = нет данных → ячейка в выходе остаётся пустой (не «no» и не другое)
+empty_markers:
+  - UNKNOWN
+
+source:
+  sheet: Invoice data
+  data_from_row: 3
+
+column_map:
+  erid: 6
+  contract_no: 11
+  contract_date: 12
+  contract_type: 13
+  contract_subject: 15
+  activity_type: 16
+  customer_name: 22
+  customer_type: 23
+  customer_inn: 24
+  customer_reg_no: 30
+  customer_oksm: 29
+  contractor_name: 17
+  contractor_type: 18
+  contractor_inn: 19
+  contractor_reg_no: 20
+  vat_included: 14
+
+amount_by_vat:
+  vat_field: vat_included
+  with_vat: 10
+  without_vat: 7
+
+constants: {}

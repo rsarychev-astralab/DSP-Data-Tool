@@ -1,0 +1,29 @@
+id: sape
+display_name: Сейп (sape)
+
+source:
+  sheet: Erid
+  data_from_row: 2
+
+column_map:
+  erid: 0
+  contractor_name: 1
+  contractor_type: 2
+  contractor_inn: 3
+  contractor_reg_no: 4
+  contractor_oksm: 5
+  customer_name: 6
+  customer_type: 7
+  customer_inn: 8
+  customer_reg_no: 9
+  customer_oksm: 10
+  contract_no: 12
+  contract_date: 13
+  contract_type: 14
+  activity_type: 15
+  contract_subject: 16
+  impressions: 17
+  amount: 18
+  vat_included: 19
+
+constants: {}
