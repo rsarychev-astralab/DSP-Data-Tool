@@ -105,7 +105,8 @@
       font-size: 0.8125rem;
       color: #991b1b;
     }
-    #progress-wrap.d-none { display: none !important; }
+    #progress-wrap.d-none,
+    #match-progress-wrap.d-none { display: none !important; }
     #progress-label { color: #374151; font-weight: 600; }
     #progress-pct { color: #6b7280; }
     .card-header-tabs {
@@ -263,12 +264,69 @@
           <div class="tab-pane fade" id="tab-matching" role="tabpanel"
                aria-labelledby="tab-matching-btn" tabindex="0">
             <p class="text-muted small mb-3">
-              Сопоставление договоров из выгрузки DSP с договорами в учётной системе.
+              Загрузите файл шаблона после преобразования. Сопоставление по номеру и дате договора,
+              заказчику, исполнителю, типу и предмету договора, а также по виду деятельности
+              (он соответствует «Типу посреднического договора» в базе). На выходе — ERID и ID в OTM, OZON, VK.
             </p>
-            <div class="alert alert-light border mb-0" role="status">
-              Раздел в разработке. Сначала выполните преобразование на вкладке
-              «Загрузка и преобразование».
+
+            <div id="match-attrs-info" class="alert alert-light border small mb-3" role="status"></div>
+
+            <nav class="steps mb-3" aria-label="Шаги метчинга">
+              <div class="step active" id="match-step-file">1. Файл</div>
+              <div class="step" id="match-step-run">2. Метчинг</div>
+              <div class="step" id="match-step-dl">3. Скачать</div>
+            </nav>
+
+            <section class="mb-4" aria-labelledby="lbl-match-file">
+              <span class="form-label d-block" id="lbl-match-file">Файл шаблона</span>
+              <div class="drop-zone" id="match-drop-zone" tabindex="0" role="button"
+                   aria-label="Выберите или перетащите файл Excel после преобразования">
+                <input type="file" id="match-file" accept=".xlsx,.xlsm,.xls" />
+                <div id="match-drop-placeholder">
+                  <div class="text-muted small">Перетащите файл сюда или нажмите для выбора</div>
+                  <div class="text-muted small mt-1">Результат преобразования: .xlsx, .xlsm, .xls</div>
+                </div>
+                <div id="match-drop-selected" class="file-meta d-none">
+                  <div class="file-row">
+                    <div class="file-info">
+                      <div class="name" id="match-file-name"></div>
+                      <div class="text-muted small" id="match-file-size"></div>
+                    </div>
+                    <button type="button" class="btn-close file-remove" id="match-file-remove"
+                            aria-label="Удалить файл" title="Удалить файл"></button>
+                  </div>
+                </div>
+              </div>
+            </section>
+
+            <div class="d-grid gap-2 mb-2">
+              <button type="button" class="btn btn-primary btn-lg" id="match-submit" disabled>
+                Сметчить
+              </button>
             </div>
+
+            <div id="match-progress-wrap" class="d-none mb-3" aria-live="polite">
+              <div class="d-flex justify-content-between align-items-center small mb-1">
+                <span id="match-progress-label">Загрузка…</span>
+                <span id="match-progress-pct"></span>
+              </div>
+              <div class="progress" style="height: 10px;">
+                <div id="match-progress-bar" class="progress-bar progress-bar-striped" role="progressbar"
+                     style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+              </div>
+            </div>
+
+            <div id="match-download-actions" class="d-grid gap-2 mb-3 d-none" aria-live="polite">
+              <button type="button" class="btn btn-success btn-lg" id="match-download">
+                Скачать сметченный файл
+              </button>
+            </div>
+
+            <div id="match-result-info" class="result-block d-none" aria-live="polite">
+              <p class="small text-success mb-0" id="match-result-hint"></p>
+            </div>
+
+            <div id="match-status" class="d-none mt-3" role="status"></div>
           </div>
         </div>
       </div>
@@ -486,30 +544,40 @@
     const UPLOAD_WEIGHT = 0.35;
     const DOWNLOAD_WEIGHT = 0.65;
 
-    const hideProgress = () => {
-      progressWrap.classList.add('d-none');
-      progressBar.classList.remove('progress-bar-animated');
-      progressBar.style.width = '0%';
-      progressBar.setAttribute('aria-valuenow', '0');
-      progressPct.textContent = '';
-    };
+    const makeProgress = ({ wrap, labelEl, pctEl, barEl }) => ({
+      hide() {
+        wrap.classList.add('d-none');
+        barEl.classList.remove('progress-bar-animated');
+        barEl.style.width = '0%';
+        barEl.setAttribute('aria-valuenow', '0');
+        pctEl.textContent = '';
+      },
+      set(ratio, label, { indeterminate = false } = {}) {
+        wrap.classList.remove('d-none');
+        labelEl.textContent = label;
+        if (indeterminate) {
+          barEl.classList.add('progress-bar-animated');
+          barEl.style.width = '100%';
+          pctEl.textContent = '';
+          barEl.setAttribute('aria-valuenow', '');
+          return;
+        }
+        barEl.classList.remove('progress-bar-animated');
+        const pct = Math.min(100, Math.max(0, Math.round(ratio * 100)));
+        barEl.style.width = pct + '%';
+        barEl.setAttribute('aria-valuenow', String(pct));
+        pctEl.textContent = pct + '%';
+      },
+    });
 
-    const setProgress = (ratio, label, { indeterminate = false } = {}) => {
-      progressWrap.classList.remove('d-none');
-      progressLabel.textContent = label;
-      if (indeterminate) {
-        progressBar.classList.add('progress-bar-animated');
-        progressBar.style.width = '100%';
-        progressPct.textContent = '';
-        progressBar.setAttribute('aria-valuenow', '');
-        return;
-      }
-      progressBar.classList.remove('progress-bar-animated');
-      const pct = Math.min(100, Math.max(0, Math.round(ratio * 100)));
-      progressBar.style.width = pct + '%';
-      progressBar.setAttribute('aria-valuenow', String(pct));
-      progressPct.textContent = pct + '%';
-    };
+    const uploadProgress = makeProgress({
+      wrap: progressWrap,
+      labelEl: progressLabel,
+      pctEl: progressPct,
+      barEl: progressBar,
+    });
+    const hideProgress = () => uploadProgress.hide();
+    const setProgress = (...args) => uploadProgress.set(...args);
 
     const parseXhrHeaders = xhr => {
       const headers = {};
@@ -523,7 +591,11 @@
       return headers;
     };
 
-    const postFormDataWithProgress = (url, formData, handlers) => new Promise((resolve, reject) => {
+    const postFormDataWithProgress = (url, formData, {
+      progress = uploadProgress,
+      serverLabel = 'Обработка на сервере…',
+      downloadLabel = 'Скачивание результата',
+    } = {}) => new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open('POST', url);
       xhr.responseType = 'arraybuffer';
@@ -531,28 +603,27 @@
       xhr.upload.addEventListener('progress', e => {
         if (!e.lengthComputable) return;
         const ratio = (e.loaded / e.total) * UPLOAD_WEIGHT;
-        setProgress(
+        progress.set(
           ratio,
           `Загрузка файла: ${formatSize(e.loaded)} / ${formatSize(e.total)}`
         );
       });
 
       xhr.upload.addEventListener('load', () => {
-        uploadDone = true;
-        setProgress(UPLOAD_WEIGHT, 'Преобразование на сервере…', { indeterminate: true });
+        progress.set(UPLOAD_WEIGHT, serverLabel, { indeterminate: true });
       });
 
       xhr.addEventListener('progress', e => {
         if (!e.lengthComputable) return;
         const ratio = UPLOAD_WEIGHT + (e.loaded / e.total) * DOWNLOAD_WEIGHT;
-        setProgress(
+        progress.set(
           ratio,
-          `Скачивание результата: ${formatSize(e.loaded)} / ${formatSize(e.total)}`
+          `${downloadLabel}: ${formatSize(e.loaded)} / ${formatSize(e.total)}`
         );
       });
 
       xhr.addEventListener('load', () => {
-        hideProgress();
+        progress.hide();
         resolve({
           status: xhr.status,
           buffer: xhr.response,
@@ -561,12 +632,12 @@
       });
 
       xhr.addEventListener('error', () => {
-        hideProgress();
+        progress.hide();
         reject(new Error('Ошибка сети'));
       });
 
       xhr.addEventListener('abort', () => {
-        hideProgress();
+        progress.hide();
         reject(new Error('Отменено'));
       });
 
@@ -961,6 +1032,263 @@
 
     downloadBtn.addEventListener('click', triggerDownload);
     downloadForceBtn.addEventListener('click', triggerDownload);
+
+    const matchAttrsInfo = document.getElementById('match-attrs-info');
+    const matchFileInput = document.getElementById('match-file');
+    const matchDropZone = document.getElementById('match-drop-zone');
+    const matchDropPlaceholder = document.getElementById('match-drop-placeholder');
+    const matchDropSelected = document.getElementById('match-drop-selected');
+    const matchFileNameEl = document.getElementById('match-file-name');
+    const matchFileSizeEl = document.getElementById('match-file-size');
+    const matchFileRemoveBtn = document.getElementById('match-file-remove');
+    const matchSubmitBtn = document.getElementById('match-submit');
+    const matchProgressWrap = document.getElementById('match-progress-wrap');
+    const matchProgressLabel = document.getElementById('match-progress-label');
+    const matchProgressPct = document.getElementById('match-progress-pct');
+    const matchProgressBar = document.getElementById('match-progress-bar');
+    const matchDownloadActions = document.getElementById('match-download-actions');
+    const matchDownloadBtn = document.getElementById('match-download');
+    const matchResultInfo = document.getElementById('match-result-info');
+    const matchResultHint = document.getElementById('match-result-hint');
+    const matchStatusEl = document.getElementById('match-status');
+    const matchSteps = {
+      file: document.getElementById('match-step-file'),
+      run: document.getElementById('match-step-run'),
+      dl: document.getElementById('match-step-dl'),
+    };
+
+    let matchAttrsReady = false;
+    let matchResultBlob = null;
+    let matchResultName = 'dsp_matched.xlsx';
+
+    const matchProgress = makeProgress({
+      wrap: matchProgressWrap,
+      labelEl: matchProgressLabel,
+      pctEl: matchProgressPct,
+      barEl: matchProgressBar,
+    });
+
+    const setMatchSteps = active => {
+      const order = ['file', 'run', 'dl'];
+      const idx = order.indexOf(active);
+      order.forEach((key, i) => {
+        matchSteps[key].classList.remove('active', 'done');
+        if (i < idx) matchSteps[key].classList.add('done');
+        else if (i === idx) matchSteps[key].classList.add('active');
+      });
+    };
+
+    const setMatchStatus = (text, kind) => {
+      if (!text) {
+        matchStatusEl.className = 'd-none';
+        matchStatusEl.textContent = '';
+        return;
+      }
+      const cls = kind === 'error' ? 'alert-danger'
+        : kind === 'warn' ? 'alert-warning'
+        : kind === 'ok' ? 'alert-success' : 'alert-info';
+      matchStatusEl.className = `alert py-2 mb-0 ${cls}`;
+      matchStatusEl.textContent = text;
+    };
+
+    const renderMatchAttrsInfo = (status) => {
+      if (!status) {
+        matchAttrsInfo.innerHTML = 'Проверка справочника договоров…';
+        matchAttrsInfo.className = 'alert alert-light border small mb-3';
+        return;
+      }
+      if (status.contract_attrs_ready) {
+        matchAttrsInfo.className = 'alert alert-success py-2 px-3 small mb-3';
+        matchAttrsInfo.innerHTML =
+          `Справочник договоров: <strong>${esc(status.contract_attrs_filename)}</strong> `
+          + '(лист OriginalContract).';
+      } else {
+        matchAttrsInfo.className = 'alert alert-warning py-2 px-3 small mb-3';
+        matchAttrsInfo.innerHTML =
+          'Добавьте в папку «Справка» файл атрибутов договоров '
+          + '(например, <strong>Договоры.xlsx</strong>) — без него метчинг недоступен.';
+      }
+      matchAttrsReady = !!status.contract_attrs_ready;
+      updateMatchSubmitState();
+    };
+
+    const showMatchResult = (show, hint = '') => {
+      matchDownloadActions.classList.toggle('d-none', !show);
+      matchResultInfo.classList.toggle('d-none', !show);
+      if (hint) matchResultHint.textContent = hint;
+      else if (!show) matchResultHint.textContent = '';
+      if (show) setMatchSteps('dl');
+      else if (matchFileInput.files[0]) setMatchSteps('file');
+    };
+
+    const clearMatchResult = () => {
+      matchResultBlob = null;
+      showMatchResult(false);
+    };
+
+    const updateMatchFileUI = () => {
+      const file = matchFileInput.files[0];
+      if (file) {
+        matchDropZone.classList.add('has-file');
+        matchDropPlaceholder.classList.add('d-none');
+        matchDropSelected.classList.remove('d-none');
+        matchFileNameEl.textContent = file.name;
+        matchFileSizeEl.textContent = formatSize(file.size);
+        setMatchSteps('file');
+      } else {
+        matchDropZone.classList.remove('has-file');
+        matchDropPlaceholder.classList.remove('d-none');
+        matchDropSelected.classList.add('d-none');
+        setMatchSteps('file');
+      }
+      updateMatchSubmitState();
+    };
+
+    const updateMatchSubmitState = () => {
+      matchSubmitBtn.disabled = !(matchAttrsReady && !!matchFileInput.files[0]);
+    };
+
+    const loadMatchStatus = () => fetch('/api/match/status')
+      .then(r => r.json())
+      .then(renderMatchAttrsInfo)
+      .catch(() => {
+        matchAttrsInfo.className = 'alert alert-danger py-2 px-3 small mb-3';
+        matchAttrsInfo.textContent = 'Не удалось проверить справочник договоров.';
+        matchAttrsReady = false;
+        updateMatchSubmitState();
+      });
+
+    const clearMatchFile = () => {
+      matchFileInput.value = '';
+      updateMatchFileUI();
+      clearMatchResult();
+      setMatchStatus('', '');
+    };
+
+    matchDropZone.addEventListener('click', e => {
+      if (e.target.closest('#match-file-remove')) return;
+      matchFileInput.click();
+    });
+    matchDropZone.addEventListener('keydown', e => {
+      if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); matchFileInput.click(); }
+    });
+    matchFileRemoveBtn.addEventListener('click', e => {
+      e.stopPropagation();
+      clearMatchFile();
+    });
+    matchFileInput.addEventListener('change', () => {
+      updateMatchFileUI();
+      clearMatchResult();
+      setMatchStatus('', '');
+    });
+    ['dragenter', 'dragover'].forEach(ev => {
+      matchDropZone.addEventListener(ev, e => {
+        e.preventDefault();
+        matchDropZone.classList.add('dragover');
+      });
+    });
+    ['dragleave', 'drop'].forEach(ev => {
+      matchDropZone.addEventListener(ev, e => {
+        e.preventDefault();
+        matchDropZone.classList.remove('dragover');
+      });
+    });
+    matchDropZone.addEventListener('drop', e => {
+      const f = e.dataTransfer?.files?.[0];
+      if (f && /\.(xlsx|xlsm|xls)$/i.test(f.name)) {
+        const dt = new DataTransfer();
+        dt.items.add(f);
+        matchFileInput.files = dt.files;
+        updateMatchFileUI();
+        clearMatchResult();
+        setMatchStatus('', '');
+      } else {
+        setMatchStatus('Нужен файл .xlsx, .xlsm или .xls', 'error');
+      }
+    });
+
+    matchSubmitBtn.addEventListener('click', async () => {
+      if (!matchFileInput.files[0]) return setMatchStatus('Выберите файл', 'error');
+      if (!matchAttrsReady) return setMatchStatus('Справочник договоров не загружен', 'error');
+
+      clearMatchResult();
+      matchProgress.hide();
+      matchSubmitBtn.disabled = true;
+      const prevHtml = matchSubmitBtn.innerHTML;
+      matchSubmitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Метчинг…';
+      setMatchStatus('', '');
+      setMatchSteps('run');
+
+      const form = new FormData();
+      form.append('file', matchFileInput.files[0]);
+      const started = performance.now();
+      matchProgress.set(0, 'Подготовка…');
+
+      try {
+        const { status, buffer, headers } = await postFormDataWithProgress('/api/match', form, {
+          progress: matchProgress,
+          serverLabel: 'Метчинг на сервере…',
+          downloadLabel: 'Скачивание файла',
+        });
+        const totalMs = Math.round(performance.now() - started);
+        if (status < 200 || status >= 300) {
+          setMatchStatus(parseApiErrorBody(buffer, status), 'error');
+          setMatchSteps('file');
+          return;
+        }
+        const mime = headers['content-type']
+          || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+        matchResultBlob = new Blob([buffer], { type: mime });
+        const rowsTotal = headers['x-rows-total'];
+        const rowsMatched = headers['x-rows-matched'];
+        const rowsUnmatched = headers['x-rows-unmatched'];
+        const processMs = parseInt(headers['x-process-time-ms'] || '0', 10);
+        matchResultName = parseFilenameFromDisposition(headers['content-disposition'])
+          || (matchFileInput.files[0].name.replace(/\.(xlsx|xlsm|xls)$/i, '') + '_matched.xlsx');
+
+        const parts = [];
+        if (rowsTotal) parts.push(`Строк в файле: ${rowsTotal}`);
+        if (rowsMatched != null) parts.push(`Сметчено: ${rowsMatched}`);
+        if (rowsUnmatched && parseInt(rowsUnmatched, 10) > 0) {
+          parts.push(`Без пары: ${rowsUnmatched}`);
+        }
+        const processLabel = formatDuration(processMs || totalMs);
+        if (processLabel) parts.push(`Время: ${processLabel}`);
+        if (rowsUnmatched && parseInt(rowsUnmatched, 10) > 0) {
+          parts.push('строки без пары в базе — пустые ID');
+        }
+        showMatchResult(true, parts.join(' · '));
+        setMatchStatus('Метчинг выполнен. Скачайте файл кнопкой выше.', 'ok');
+      } catch (e) {
+        matchProgress.hide();
+        setMatchStatus('Сеть: ' + e.message, 'error');
+        setMatchSteps('file');
+      } finally {
+        matchSubmitBtn.innerHTML = prevHtml;
+        updateMatchSubmitState();
+      }
+    });
+
+    matchDownloadBtn.addEventListener('click', () => {
+      if (!matchResultBlob) return;
+      const u = URL.createObjectURL(matchResultBlob);
+      const a = document.createElement('a');
+      a.href = u;
+      a.download = matchResultName;
+      matchProgress.set(0, `Сохранение ${matchResultName}…`, { indeterminate: true });
+      a.click();
+      URL.revokeObjectURL(u);
+      requestAnimationFrame(() => {
+        matchProgress.hide();
+        setMatchStatus(
+          `Файл «${matchResultName}» сохранён (${formatSize(matchResultBlob.size)}).`,
+          'ok'
+        );
+      });
+    });
+
+    document.getElementById('tab-matching-btn').addEventListener('shown.bs.tab', loadMatchStatus);
+    loadMatchStatus();
 
     initReportPeriod();
 

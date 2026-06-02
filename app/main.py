@@ -14,6 +14,7 @@ from app.http_utils import encode_validation_errors, encode_validation_rows
 from app.profiles.loader import has_transform_profile, load_profile
 from app.reporting import build_output_filename, validate_report_period
 from app.source_data import save_source_file
+from app.matching.match import match_workbook_bytes, resolve_contract_attrs_path
 from app.validation.validate import validate_workbook_bytes
 
 app = FastAPI(title="DSP Transform", version="0.1.0")
@@ -192,13 +193,63 @@ async def api_transform(
     )
 
 
+@app.get("/api/match/status")
+def api_match_status():
+    attrs_path = resolve_contract_attrs_path()
+    return {
+        "contract_attrs_ready": attrs_path is not None,
+        "contract_attrs_filename": attrs_path.name if attrs_path else None,
+        "matching_rules_ready": True,
+    }
+
+
+@app.post("/api/match")
+async def api_match(file: UploadFile = File(...)):
+    if not file.filename or not file.filename.lower().endswith((".xlsx", ".xlsm", ".xls")):
+        raise HTTPException(400, "Нужен файл .xlsx, .xlsm или .xls")
+
+    content = await file.read()
+    if len(content) > 50 * 1024 * 1024:
+        raise HTTPException(400, "Файл больше 50 МБ")
+
+    process_started = time.perf_counter()
+    try:
+        result = await asyncio.to_thread(
+            match_workbook_bytes,
+            content,
+            original_filename=file.filename,
+        )
+    except FileNotFoundError as e:
+        raise HTTPException(400, str(e)) from e
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+
+    process_ms = int((time.perf_counter() - process_started) * 1000)
+    headers = {
+        "Content-Disposition": _content_disposition(result.output_filename),
+        "X-Rows-Total": str(result.rows_total),
+        "X-Rows-Matched": str(result.rows_matched),
+        "X-Rows-Unmatched": str(result.rows_unmatched),
+        "X-Process-Time-Ms": str(process_ms),
+        "X-Matching-Rules-Ready": "1",
+        "Content-Length": str(len(result.output_bytes)),
+    }
+    return Response(
+        content=result.output_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers=headers,
+    )
+
+
 @app.get("/health")
 def health():
     catalog = load_dsp_catalog()
+    attrs_path = resolve_contract_attrs_path()
     return {
         "status": "ok",
         "dsp_count": len(catalog),
         "profiles_ready": sum(1 for e in catalog if e.has_profile),
         "template_ok": TEMPLATE_PATH.exists(),
         "spravka_ok": SPRAVKA_DSP_PATH.exists(),
+        "contract_attrs_ok": attrs_path is not None,
     }
