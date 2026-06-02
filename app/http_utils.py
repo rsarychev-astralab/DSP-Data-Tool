@@ -28,5 +28,6 @@ def encode_validation_rows(row_numbers: list[int]) -> str | None:
         parts.append(str(row))
     if not parts:
         return str(row_numbers[0])
-    suffix = ",…" if len(parts) < len(row_numbers) else ""
+    # Только ASCII: иначе Starlette падает с 500 (заголовки — latin-1).
+    suffix = ",..." if len(parts) < len(row_numbers) else ""
     return ",".join(parts) + suffix

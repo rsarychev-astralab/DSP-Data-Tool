@@ -21,4 +21,12 @@ def test_encode_validation_rows_truncates():
     rows = list(range(3, 3000))
     encoded = encode_validation_rows(rows)
     assert encoded is not None
-    assert encoded.endswith(",…")
+    assert encoded.endswith(",...")
+    encoded.encode("latin-1")
+
+
+def test_encode_validation_rows_latin1_safe_for_otm_scale():
+    rows = list(range(3, 3 + 800))
+    encoded = encode_validation_rows(rows)
+    assert encoded is not None
+    encoded.encode("latin-1")

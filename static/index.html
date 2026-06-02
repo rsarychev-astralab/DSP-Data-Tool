@@ -264,27 +264,30 @@
           <div class="tab-pane fade" id="tab-matching" role="tabpanel"
                aria-labelledby="tab-matching-btn" tabindex="0">
             <p class="text-muted small mb-3">
-              Загрузите файл шаблона после преобразования. Сопоставление по номеру и дате договора,
-              заказчику, исполнителю, типу и предмету договора, а также по виду деятельности
-              (он соответствует «Типу посреднического договора» в базе). На выходе — ERID и ID в OTM, OZON, VK.
+              Сначала преобразуйте выгрузку на соседней вкладке, затем загрузите <strong>тот же файл
+              результата</strong> (шаблон загрузки DSP, 19 колонок). Метчинг <strong>по договору</strong>:
+              номер, дата, тип и предмет договора, ИНН заказчика и исполнителя. В базе у номера часто суффикс
+              « - 1234» (внутренний id) — при метче он отбрасывается. На выходе — ERID
+              и ID в OTM, OZON, VK. В файле два листа: <strong>ID</strong> (краткий) и
+              <strong>Выгрузка с ID</strong> (основные поля договора/сторон + ID).
             </p>
 
             <div id="match-attrs-info" class="alert alert-light border small mb-3" role="status"></div>
 
             <nav class="steps mb-3" aria-label="Шаги метчинга">
-              <div class="step active" id="match-step-file">1. Файл</div>
+              <div class="step active" id="match-step-file">1. Файл преобразования</div>
               <div class="step" id="match-step-run">2. Метчинг</div>
               <div class="step" id="match-step-dl">3. Скачать</div>
             </nav>
 
             <section class="mb-4" aria-labelledby="lbl-match-file">
-              <span class="form-label d-block" id="lbl-match-file">Файл шаблона</span>
+              <span class="form-label d-block" id="lbl-match-file">Файл после преобразования</span>
               <div class="drop-zone" id="match-drop-zone" tabindex="0" role="button"
-                   aria-label="Выберите или перетащите файл Excel после преобразования">
+                   aria-label="Выберите файл результата преобразования">
                 <input type="file" id="match-file" accept=".xlsx,.xlsm,.xls" />
                 <div id="match-drop-placeholder">
-                  <div class="text-muted small">Перетащите файл сюда или нажмите для выбора</div>
-                  <div class="text-muted small mt-1">Результат преобразования: .xlsx, .xlsm, .xls</div>
+                  <div class="text-muted small">Файл с вкладки «Загрузка и преобразование»</div>
+                  <div class="text-muted small mt-1">.xlsx / .xlsm — шаблон загрузки DSP</div>
                 </div>
                 <div id="match-drop-selected" class="file-meta d-none">
                   <div class="file-row">
@@ -1208,7 +1211,9 @@
     });
 
     matchSubmitBtn.addEventListener('click', async () => {
-      if (!matchFileInput.files[0]) return setMatchStatus('Выберите файл', 'error');
+      if (!matchFileInput.files[0]) {
+        return setMatchStatus('Выберите файл после преобразования', 'error');
+      }
       if (!matchAttrsReady) return setMatchStatus('Справочник договоров не загружен', 'error');
 
       clearMatchResult();
@@ -1242,15 +1247,26 @@
         const rowsTotal = headers['x-rows-total'];
         const rowsMatched = headers['x-rows-matched'];
         const rowsUnmatched = headers['x-rows-unmatched'];
+        const contractsTotal = headers['x-contracts-total'];
+        const contractsMatched = headers['x-contracts-matched'];
+        const contractsUnmatched = headers['x-contracts-unmatched'];
         const processMs = parseInt(headers['x-process-time-ms'] || '0', 10);
         matchResultName = parseFilenameFromDisposition(headers['content-disposition'])
           || (matchFileInput.files[0].name.replace(/\.(xlsx|xlsm|xls)$/i, '') + '_matched.xlsx');
 
         const parts = [];
-        if (rowsTotal) parts.push(`Строк в файле: ${rowsTotal}`);
-        if (rowsMatched != null) parts.push(`Сметчено: ${rowsMatched}`);
+        if (rowsTotal) parts.push(`Строк ERID: ${rowsTotal}`);
+        if (contractsTotal) {
+          parts.push(`Договоров: ${contractsTotal}`);
+          if (contractsMatched != null) parts.push(`сметчено ${contractsMatched}`);
+          if (contractsUnmatched && parseInt(contractsUnmatched, 10) > 0) {
+            parts.push(`без пары ${contractsUnmatched}`);
+          }
+        } else if (rowsMatched != null) {
+          parts.push(`Сметчено строк: ${rowsMatched}`);
+        }
         if (rowsUnmatched && parseInt(rowsUnmatched, 10) > 0) {
-          parts.push(`Без пары: ${rowsUnmatched}`);
+          parts.push(`строк без ID: ${rowsUnmatched}`);
         }
         const processLabel = formatDuration(processMs || totalMs);
         if (processLabel) parts.push(`Время: ${processLabel}`);
