@@ -17,10 +17,31 @@ def has_value(val):
     return text != "" and text != "--"
 
 
+_WHOLE_NUMBER_TEXT = re.compile(r"^-?\d+[.,]\d+$")
+_INTEGER_TEXT = re.compile(r"^-?\d+$")
+
+
 def normalize_text(val):
     if not has_value(val):
         return None
-    return str(val).strip()
+    if isinstance(val, bool):
+        return str(val)
+    if isinstance(val, int):
+        return str(val)
+    if isinstance(val, float):
+        if val != val:
+            return None
+        if val == int(val):
+            return str(int(val))
+        return str(val).strip()
+    text = str(val).strip()
+    if _INTEGER_TEXT.fullmatch(text):
+        return text
+    if _WHOLE_NUMBER_TEXT.fullmatch(text):
+        num = _parse_number(text)
+        if num is not None and num == int(num):
+            return str(int(num))
+    return text
 
 
 def normalize_date(val):

@@ -1,5 +1,5 @@
 from app.profiles.loader import load_profile
-from app.validation.validate import validate_row
+from app.validation.validate import validate_row, validate_workbook_bytes
 
 
 def _full_row(**overrides):
@@ -28,6 +28,25 @@ def _full_row(**overrides):
 def test_validate_row_requires_erid():
     errors = validate_row(3, [""] * 19, None)
     assert any("ERID" in e for e in errors)
+    assert all(e.startswith("Строка 3:") for e in errors)
+
+
+def test_validate_workbook_collects_row_numbers():
+    from io import BytesIO
+
+    import openpyxl  # noqa: PLC0415
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["h1", "h2"])
+    ws.append(["h1", "h2"])
+    ws.append([""] * 19)
+    ws.append(["erid"] + [""] * 18)
+    buf = BytesIO()
+    wb.save(buf)
+    validation = validate_workbook_bytes(buf.getvalue(), None)
+    assert 4 in validation.row_numbers
+    assert any("Строка 4:" in e for e in validation.errors)
 
 
 def test_adriver_allows_empty_reg_no_for_ru():
@@ -81,5 +100,6 @@ def test_adriver_workbook_validation_minimal_errors():
         result = transform_source(
             BytesIO(f.read()), profile, template_path=TEMPLATE_PATH
         )
-    errors = validate_workbook_bytes(result.output_bytes, profile)
-    assert len(errors) == 0, errors[:5]
+    validation = validate_workbook_bytes(result.output_bytes, profile)
+    assert len(validation.errors) == 0, validation.errors[:5]
+    assert validation.row_numbers == []

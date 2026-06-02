@@ -105,6 +105,34 @@
       font-size: 0.8125rem;
       color: #991b1b;
     }
+    #progress-wrap.d-none { display: none !important; }
+    #progress-label { color: #374151; font-weight: 600; }
+    #progress-pct { color: #6b7280; }
+    .card-header-tabs {
+      margin: 0;
+      padding: 0 0.75rem;
+      border-bottom: 1px solid #d4dbe5;
+    }
+    .card-header-tabs .nav-link {
+      color: #4b5563;
+      font-weight: 700;
+      font-size: 0.875rem;
+      border: none;
+      border-bottom: 3px solid transparent;
+      border-radius: 0;
+      padding: 0.85rem 0.75rem;
+      margin-bottom: -1px;
+    }
+    .card-header-tabs .nav-link:hover {
+      color: var(--erir-header);
+      border-bottom-color: #c5d4e8;
+      background: transparent;
+    }
+    .card-header-tabs .nav-link.active {
+      color: var(--erir-header);
+      background: transparent;
+      border-bottom-color: var(--erir-header);
+    }
   </style>
 </head>
 <body class="d-flex flex-column">
@@ -117,8 +145,28 @@
 
   <main class="container flex-grow-1 pb-5">
     <div class="card">
-      <div class="card-header">Загрузка и преобразование</div>
+      <div class="card-header bg-white p-0">
+        <ul class="nav nav-tabs card-header-tabs" id="main-tabs" role="tablist">
+          <li class="nav-item" role="presentation">
+            <button class="nav-link active" id="tab-upload-btn" data-bs-toggle="tab"
+                    data-bs-target="#tab-upload" type="button" role="tab"
+                    aria-controls="tab-upload" aria-selected="true">
+              Загрузка и преобразование
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-matching-btn" data-bs-toggle="tab"
+                    data-bs-target="#tab-matching" type="button" role="tab"
+                    aria-controls="tab-matching" aria-selected="false">
+              Метчинг договоров
+            </button>
+          </li>
+        </ul>
+      </div>
       <div class="card-body">
+        <div class="tab-content" id="main-tabs-content">
+          <div class="tab-pane fade show active" id="tab-upload" role="tabpanel"
+               aria-labelledby="tab-upload-btn" tabindex="0">
         <nav class="steps" aria-label="Шаги">
           <div class="step active" id="step-dsp">1. DSP</div>
           <div class="step" id="step-file">2. Файл</div>
@@ -182,19 +230,47 @@
         </div>
         <p class="form-text mb-0" id="sample-name-preview"></p>
 
-        <div id="result-block" class="result-block d-none" aria-live="polite">
-          <p class="small text-success mb-2 mb-md-3" id="result-hint"></p>
-          <div id="validation-errors" class="d-none mb-2">
-            <div class="small fw-bold text-danger">Замечания проверки шаблона</div>
-            <ul id="validation-errors-list" class="validation-list mb-2 ps-3"></ul>
+        <div id="progress-wrap" class="d-none mb-3" aria-live="polite">
+          <div class="d-flex justify-content-between align-items-center small mb-1">
+            <span id="progress-label">Загрузка…</span>
+            <span id="progress-pct"></span>
           </div>
-          <button type="button" class="btn btn-success btn-lg w-100" id="download">Скачать результат</button>
-          <button type="button" class="btn btn-outline-warning w-100 mt-2 d-none" id="download-force">
+          <div class="progress" style="height: 10px;">
+            <div id="progress-bar" class="progress-bar progress-bar-striped" role="progressbar"
+                 style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+        </div>
+
+        <div id="download-actions" class="d-grid gap-2 mb-3 d-none" aria-live="polite">
+          <button type="button" class="btn btn-success btn-lg" id="download">Скачать результат</button>
+          <button type="button" class="btn btn-outline-warning d-none" id="download-force">
             Скачать с замечаниями
           </button>
         </div>
 
+        <div id="result-info" class="result-block d-none" aria-live="polite">
+          <p class="small text-success mb-2 mb-md-0" id="result-hint"></p>
+          <div id="validation-errors" class="d-none mb-0">
+            <div class="small fw-bold text-danger mt-2">Замечания проверки шаблона</div>
+            <p id="validation-rows-summary" class="small text-danger mb-1 d-none"></p>
+            <ul id="validation-errors-list" class="validation-list mb-0 ps-3"></ul>
+          </div>
+        </div>
+
         <div id="status" class="d-none mt-3" role="status"></div>
+          </div>
+
+          <div class="tab-pane fade" id="tab-matching" role="tabpanel"
+               aria-labelledby="tab-matching-btn" tabindex="0">
+            <p class="text-muted small mb-3">
+              Сопоставление договоров из выгрузки DSP с договорами в учётной системе.
+            </p>
+            <div class="alert alert-light border mb-0" role="status">
+              Раздел в разработке. Сначала выполните преобразование на вкладке
+              «Загрузка и преобразование».
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   </main>
@@ -214,16 +290,22 @@
     const submitBtn = document.getElementById('submit');
     const saveSampleBtn = document.getElementById('save-sample');
     const sampleNamePreview = document.getElementById('sample-name-preview');
-    const resultBlock = document.getElementById('result-block');
+    const downloadActions = document.getElementById('download-actions');
+    const resultInfo = document.getElementById('result-info');
     const resultHint = document.getElementById('result-hint');
     const downloadBtn = document.getElementById('download');
     const downloadForceBtn = document.getElementById('download-force');
     const validationErrorsEl = document.getElementById('validation-errors');
+    const validationRowsSummary = document.getElementById('validation-rows-summary');
     const validationErrorsList = document.getElementById('validation-errors-list');
     const statusEl = document.getElementById('status');
     const reportMonth = document.getElementById('report-month');
     const reportYear = document.getElementById('report-year');
     const outputNamePreview = document.getElementById('output-name-preview');
+    const progressWrap = document.getElementById('progress-wrap');
+    const progressLabel = document.getElementById('progress-label');
+    const progressPct = document.getElementById('progress-pct');
+    const progressBar = document.getElementById('progress-bar');
 
     const MONTH_SLUG = ['', 'jan','feb','mar','apr','may','jun','jul','aug','sep','oct','nov','dec'];
     const MONTH_LABEL = ['', 'Январь','Февраль','Март','Апрель','Май','Июнь','Июль','Август','Сентябрь','Октябрь','Ноябрь','Декабрь'];
@@ -238,14 +320,76 @@
     let resultBlob = null, resultName = 'result_dsp.xlsx';
     let validationErrors = [];
 
+    const decodeBase64Utf8 = value => {
+      const binary = atob(value);
+      const bytes = Uint8Array.from(binary, ch => ch.charCodeAt(0));
+      return new TextDecoder('utf-8').decode(bytes);
+    };
+
     const parseValidationHeader = value => {
       if (!value) return [];
       try {
-        const parsed = JSON.parse(atob(value));
+        const parsed = JSON.parse(decodeBase64Utf8(value));
         return Array.isArray(parsed) ? parsed : [];
       } catch (_) {
         return [];
       }
+    };
+
+    const parseValidationRowsHeader = value => {
+      if (!value) return [];
+      const trimmed = value.trim();
+      if (!trimmed) return [];
+      const truncated = trimmed.endsWith(',…') || trimmed.endsWith('…');
+      const body = truncated ? trimmed.replace(/,…$/, '').replace(/…$/, '') : trimmed;
+      const rows = body.split(',')
+        .map(s => parseInt(s.trim(), 10))
+        .filter(n => Number.isFinite(n) && n > 0);
+      return [...new Set(rows)].sort((a, b) => a - b);
+    };
+
+    const ROW_ERROR_RE = /^Строка (\d+):\s*(.+)$/;
+
+    const extractRowsFromErrors = errors => {
+      const rows = new Set();
+      for (const e of errors) {
+        const m = String(e).match(ROW_ERROR_RE);
+        if (m) rows.add(parseInt(m[1], 10));
+      }
+      return [...rows].sort((a, b) => a - b);
+    };
+
+    const formatRowNumbersList = (rows, { maxShown = 80 } = {}) => {
+      if (!rows.length) return '';
+      if (rows.length <= maxShown) return rows.join(', ');
+      const head = rows.slice(0, maxShown).join(', ');
+      return `${head} … (ещё ${rows.length - maxShown})`;
+    };
+
+    const buildValidationListHtml = errors => {
+      const groups = new Map();
+      const other = [];
+      for (const e of errors) {
+        const m = String(e).match(ROW_ERROR_RE);
+        if (m) {
+          const row = m[1];
+          if (!groups.has(row)) groups.set(row, []);
+          groups.get(row).push(m[2]);
+        } else {
+          other.push(e);
+        }
+      }
+      const rowKeys = [...groups.keys()].sort((a, b) => Number(a) - Number(b));
+      let html = '';
+      for (const row of rowKeys) {
+        const msgs = groups.get(row);
+        const inner = msgs.map(msg => `<li>${esc(msg)}</li>`).join('');
+        html += `<li class="mb-1"><span class="fw-semibold">Строка ${esc(row)}</span><ul class="mb-0 ps-3">${inner}</ul></li>`;
+      }
+      for (const e of other) {
+        html += `<li>${esc(e)}</li>`;
+      }
+      return html;
     };
 
     const parseApiErrorBody = (buffer, status) => {
@@ -287,10 +431,12 @@
       return plain ? plain[1].trim() : null;
     };
 
-    const renderValidationErrors = errors => {
+    const renderValidationErrors = (errors, rowNumbersFromHeader = []) => {
       validationErrors = errors;
       if (!errors.length) {
         validationErrorsEl.classList.add('d-none');
+        validationRowsSummary.classList.add('d-none');
+        validationRowsSummary.textContent = '';
         validationErrorsList.innerHTML = '';
         downloadBtn.classList.remove('d-none');
         downloadForceBtn.classList.add('d-none');
@@ -298,9 +444,21 @@
         return;
       }
       validationErrorsEl.classList.remove('d-none');
+      const rowsFromHeader = parseValidationRowsHeader(rowNumbersFromHeader);
+      const rowsFromErrors = extractRowsFromErrors(errors);
+      const allRows = [...new Set([...rowsFromHeader, ...rowsFromErrors])].sort((a, b) => a - b);
+      if (allRows.length) {
+        const rowLabel = allRows.length === 1 ? 'строка' : 'строки';
+        validationRowsSummary.textContent =
+          `Проблемные ${rowLabel} Excel (${allRows.length}): ${formatRowNumbersList(allRows)}`;
+        validationRowsSummary.classList.remove('d-none');
+      } else {
+        validationRowsSummary.classList.add('d-none');
+        validationRowsSummary.textContent = '';
+      }
       const shown = errors.slice(0, 30);
-      validationErrorsList.innerHTML = shown.map(e => `<li>${esc(e)}</li>`).join('')
-        + (errors.length > 30 ? `<li class="text-muted">…и ещё ${errors.length - 30}</li>` : '');
+      validationErrorsList.innerHTML = buildValidationListHtml(shown)
+        + (errors.length > 30 ? `<li class="text-muted">…и ещё ${errors.length - 30} замечаний</li>` : '');
       downloadBtn.classList.add('d-none');
       downloadForceBtn.classList.remove('d-none');
       downloadForceBtn.disabled = !resultBlob;
@@ -324,6 +482,96 @@
       if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' КБ';
       return (bytes / (1024 * 1024)).toFixed(1) + ' МБ';
     };
+
+    const UPLOAD_WEIGHT = 0.35;
+    const DOWNLOAD_WEIGHT = 0.65;
+
+    const hideProgress = () => {
+      progressWrap.classList.add('d-none');
+      progressBar.classList.remove('progress-bar-animated');
+      progressBar.style.width = '0%';
+      progressBar.setAttribute('aria-valuenow', '0');
+      progressPct.textContent = '';
+    };
+
+    const setProgress = (ratio, label, { indeterminate = false } = {}) => {
+      progressWrap.classList.remove('d-none');
+      progressLabel.textContent = label;
+      if (indeterminate) {
+        progressBar.classList.add('progress-bar-animated');
+        progressBar.style.width = '100%';
+        progressPct.textContent = '';
+        progressBar.setAttribute('aria-valuenow', '');
+        return;
+      }
+      progressBar.classList.remove('progress-bar-animated');
+      const pct = Math.min(100, Math.max(0, Math.round(ratio * 100)));
+      progressBar.style.width = pct + '%';
+      progressBar.setAttribute('aria-valuenow', String(pct));
+      progressPct.textContent = pct + '%';
+    };
+
+    const parseXhrHeaders = xhr => {
+      const headers = {};
+      const raw = xhr.getAllResponseHeaders() || '';
+      raw.trim().split(/[\r\n]+/).forEach(line => {
+        const idx = line.indexOf(':');
+        if (idx > 0) {
+          headers[line.slice(0, idx).trim().toLowerCase()] = line.slice(idx + 1).trim();
+        }
+      });
+      return headers;
+    };
+
+    const postFormDataWithProgress = (url, formData, handlers) => new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open('POST', url);
+      xhr.responseType = 'arraybuffer';
+
+      xhr.upload.addEventListener('progress', e => {
+        if (!e.lengthComputable) return;
+        const ratio = (e.loaded / e.total) * UPLOAD_WEIGHT;
+        setProgress(
+          ratio,
+          `Загрузка файла: ${formatSize(e.loaded)} / ${formatSize(e.total)}`
+        );
+      });
+
+      xhr.upload.addEventListener('load', () => {
+        uploadDone = true;
+        setProgress(UPLOAD_WEIGHT, 'Преобразование на сервере…', { indeterminate: true });
+      });
+
+      xhr.addEventListener('progress', e => {
+        if (!e.lengthComputable) return;
+        const ratio = UPLOAD_WEIGHT + (e.loaded / e.total) * DOWNLOAD_WEIGHT;
+        setProgress(
+          ratio,
+          `Скачивание результата: ${formatSize(e.loaded)} / ${formatSize(e.total)}`
+        );
+      });
+
+      xhr.addEventListener('load', () => {
+        hideProgress();
+        resolve({
+          status: xhr.status,
+          buffer: xhr.response,
+          headers: parseXhrHeaders(xhr),
+        });
+      });
+
+      xhr.addEventListener('error', () => {
+        hideProgress();
+        reject(new Error('Ошибка сети'));
+      });
+
+      xhr.addEventListener('abort', () => {
+        hideProgress();
+        reject(new Error('Отменено'));
+      });
+
+      xhr.send(formData);
+    });
 
     const updateFileUI = () => {
       const file = fileInput.files[0];
@@ -416,15 +664,17 @@
     };
 
     const showResult = (show, hint = '') => {
-      resultBlock.classList.toggle('d-none', !show);
+      downloadActions.classList.toggle('d-none', !show);
+      resultInfo.classList.toggle('d-none', !show);
       if (hint) resultHint.textContent = hint;
+      else if (!show) resultHint.textContent = '';
       if (show) setSteps('dl');
       else if (fileInput.files[0] && selectedPartnerId) setSteps('file');
     };
 
     const clearResult = () => {
       resultBlob = null;
-      renderValidationErrors([]);
+      renderValidationErrors([], '');
       showResult(false);
     };
 
@@ -624,10 +874,11 @@
       if (!getP()?.has_profile) return setStatus('Профиль преобразования не настроен', 'error');
 
       clearResult();
+      hideProgress();
       submitBtn.disabled = true;
       const prevHtml = submitBtn.innerHTML;
       submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Обработка…';
-      setStatus('Идёт преобразование, подождите…', 'info');
+      setStatus('', '');
       setSteps('run');
 
       const form = new FormData();
@@ -637,24 +888,24 @@
       form.append('report_year', reportYear.value);
 
       const transformStarted = performance.now();
+      setProgress(0, 'Подготовка…');
       try {
-        const res = await fetch('/api/transform', { method: 'POST', body: form });
-        const buffer = await res.arrayBuffer();
+        const { status, buffer, headers } = await postFormDataWithProgress('/api/transform', form);
         const totalMs = Math.round(performance.now() - transformStarted);
-        if (!res.ok) {
-          setStatus(parseApiErrorBody(buffer, res.status), 'error');
+        if (status < 200 || status >= 300) {
+          setStatus(parseApiErrorBody(buffer, status), 'error');
           setSteps('file');
           return;
         }
-        const mime = res.headers.get('Content-Type')
+        const mime = headers['content-type']
           || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
         resultBlob = new Blob([buffer], { type: mime });
-        const rows = res.headers.get('X-Rows-Written');
-        const skippedEmpty = parseInt(res.headers.get('X-Skipped-Empty-Rows') || '0', 10);
-        const valErrs = parseInt(res.headers.get('X-Validation-Error-Count') || '0', 10);
-        const valList = parseValidationHeader(res.headers.get('X-Validation-Errors'));
-        const processMs = parseInt(res.headers.get('X-Process-Time-Ms') || '0', 10);
-        resultName = parseFilenameFromDisposition(res.headers.get('Content-Disposition'))
+        const rows = headers['x-rows-written'];
+        const skippedEmpty = parseInt(headers['x-skipped-empty-rows'] || '0', 10);
+        const valErrs = parseInt(headers['x-validation-error-count'] || '0', 10);
+        const valList = parseValidationHeader(headers['x-validation-errors']);
+        const processMs = parseInt(headers['x-process-time-ms'] || '0', 10);
+        resultName = parseFilenameFromDisposition(headers['content-disposition'])
           || buildOutputName() || 'result_dsp.xlsx';
 
         const parts = [];
@@ -669,12 +920,14 @@
         }
         let hint = parts.join(' · ');
         if (valErrs > 0) {
-          hint += '. Исправьте замечания ниже или скачайте файл с оговоркой.';
-        } else {
-          hint += '. Нажмите кнопку ниже для скачивания.';
+          hint += '. Скачайте файл кнопкой выше или исправьте замечания ниже.';
         }
         showResult(true, hint);
-        renderValidationErrors(valList.length ? valList : (valErrs > 0 ? [`Всего замечаний: ${valErrs}`] : []));
+        const valRows = headers['x-validation-rows'] || '';
+        renderValidationErrors(
+          valList.length ? valList : (valErrs > 0 ? [`Всего замечаний: ${valErrs}`] : []),
+          valRows
+        );
 
         if (valErrs > 0) {
           setStatus(`Готово. Замечаний проверки: ${valErrs}.`, 'warn');
@@ -682,6 +935,7 @@
           setStatus('Преобразование завершено успешно.', 'ok');
         }
       } catch (e) {
+        hideProgress();
         setStatus('Сеть: ' + e.message, 'error');
         setSteps('file');
       } finally {
@@ -696,8 +950,13 @@
       const a = document.createElement('a');
       a.href = u;
       a.download = resultName;
+      setProgress(0, `Сохранение ${resultName}…`, { indeterminate: true });
       a.click();
       URL.revokeObjectURL(u);
+      requestAnimationFrame(() => {
+        hideProgress();
+        setStatus(`Файл «${resultName}» сохранён (${formatSize(resultBlob.size)}).`, 'ok');
+      });
     };
 
     downloadBtn.addEventListener('click', triggerDownload);

@@ -10,7 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from app.catalog import get_catalog_entry, get_catalog_warnings, load_dsp_catalog
 from app.config import SPRAVKA_DSP_PATH, STATIC_DIR, TEMPLATE_PATH
 from app.engine.transform import transform_source
-from app.http_utils import encode_validation_errors
+from app.http_utils import encode_validation_errors, encode_validation_rows
 from app.profiles.loader import has_transform_profile, load_profile
 from app.reporting import build_output_filename, validate_report_period
 from app.source_data import save_source_file
@@ -166,7 +166,7 @@ async def api_transform(
     if result.rows_written == 0:
         raise HTTPException(400, "Нет данных для записи")
 
-    validation_errors = await asyncio.to_thread(
+    validation = await asyncio.to_thread(
         validate_workbook_bytes, result.output_bytes, profile
     )
     process_ms = int((time.perf_counter() - process_started) * 1000)
@@ -174,13 +174,17 @@ async def api_transform(
         "Content-Disposition": _content_disposition(out_name),
         "X-Rows-Written": str(result.rows_written),
         "X-Skipped-Empty-Rows": str(result.skipped_empty_rows),
-        "X-Validation-Error-Count": str(len(validation_errors)),
+        "X-Validation-Error-Count": str(len(validation.errors)),
         "X-Process-Time-Ms": str(process_ms),
     }
-    encoded_errors = encode_validation_errors(validation_errors)
+    encoded_errors = encode_validation_errors(validation.errors)
     if encoded_errors:
         headers["X-Validation-Errors"] = encoded_errors
+    encoded_rows = encode_validation_rows(validation.row_numbers)
+    if encoded_rows:
+        headers["X-Validation-Rows"] = encoded_rows
 
+    headers["Content-Length"] = str(len(result.output_bytes))
     return Response(
         content=result.output_bytes,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",

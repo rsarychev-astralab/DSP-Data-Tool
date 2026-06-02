@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+from dataclasses import dataclass
 from io import BytesIO
 from typing import TYPE_CHECKING
 
@@ -61,6 +62,12 @@ RU_PARTY = frozenset(
 FOREIGN_PARTY = frozenset(
     {"foreignphysicalperson", "foreignlegalperson"}
 )
+
+
+@dataclass(frozen=True)
+class ValidationResult:
+    errors: list[str]
+    row_numbers: list[int]
 
 
 def norm(val):
@@ -214,10 +221,13 @@ def validate_row(row_num: int, values, profile: PartnerProfile | None) -> list[s
     return errors
 
 
-def validate_workbook_bytes(data: bytes, profile: PartnerProfile | None = None) -> list[str]:
+def validate_workbook_bytes(
+    data: bytes, profile: PartnerProfile | None = None
+) -> ValidationResult:
     wb = openpyxl.load_workbook(BytesIO(data), read_only=True, data_only=True)
     ws = wb.active
     all_errors: list[str] = []
+    problem_rows: list[int] = []
     data_rows = 0
     for row_num, row in enumerate(
         ws.iter_rows(min_row=3, max_col=19, values_only=True),
@@ -227,8 +237,11 @@ def validate_workbook_bytes(data: bytes, profile: PartnerProfile | None = None) 
         if all(is_empty(x) for x in values):
             continue
         data_rows += 1
-        all_errors.extend(validate_row(row_num, values, profile))
+        row_errors = validate_row(row_num, values, profile)
+        if row_errors:
+            problem_rows.append(row_num)
+            all_errors.extend(row_errors)
     if data_rows == 0:
         all_errors.append("Нет строк данных")
     wb.close()
-    return all_errors
+    return ValidationResult(errors=all_errors, row_numbers=problem_rows)
