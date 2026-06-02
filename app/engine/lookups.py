@@ -38,8 +38,8 @@ ACTIVITY_TYPE = {
 
 PARTY_TYPE = {
     "юрлицо": "LegalPerson",
-    "юридическоелицо": "LegalPerson",
     "юрлицорф": "LegalPerson",
+    "юридическоелицо": "LegalPerson",
     "ul": "LegalPerson",
     "ип": "IndividualEntrepreneur",
     "ip": "IndividualEntrepreneur",

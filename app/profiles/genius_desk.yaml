@@ -1,0 +1,43 @@
+id: genius_desk
+display_name: Genius Desk
+
+source:
+  sheet: Лист2
+  data_from_row: 2
+
+header_check:
+  row: 1
+  columns:
+    0: [Номер_Договора]
+    5: [erid]
+    7: [Тип_Рекламодателя]
+    13: [imps]
+
+empty_markers:
+  - "—"
+  - "-"
+
+column_map:
+  contract_no: 0
+  contract_date: 1
+  contract_type: 2
+  contract_subject: 3
+  activity_type: 4
+  erid: 5
+  vat_included: 6
+  customer_type: 7
+  customer_inn: 8
+  customer_name: 9
+  contractor_type: 10
+  contractor_inn: 11
+  contractor_name: 12
+  impressions: 13
+  amount: 16
+
+optional_output_fields:
+  - customer_reg_no
+  - customer_oksm
+  - contractor_reg_no
+  - contractor_oksm
+
+constants: {}

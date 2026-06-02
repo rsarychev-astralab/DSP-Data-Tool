@@ -267,6 +267,16 @@
       return msg;
     };
 
+    const formatDuration = ms => {
+      const n = Number(ms);
+      if (!Number.isFinite(n) || n < 0) return '';
+      if (n < 1000) return `${(n / 1000).toFixed(1).replace('.', ',')} с`;
+      if (n < 60000) return `${(n / 1000).toFixed(1).replace('.', ',')} с`;
+      const min = Math.floor(n / 60000);
+      const sec = Math.round((n % 60000) / 1000);
+      return sec ? `${min} мин ${sec} с` : `${min} мин`;
+    };
+
     const parseFilenameFromDisposition = header => {
       if (!header) return null;
       const star = header.match(/filename\*=UTF-8''([^;\n]+)/i);
@@ -626,9 +636,11 @@
       form.append('report_month', reportMonth.value);
       form.append('report_year', reportYear.value);
 
+      const transformStarted = performance.now();
       try {
         const res = await fetch('/api/transform', { method: 'POST', body: form });
         const buffer = await res.arrayBuffer();
+        const totalMs = Math.round(performance.now() - transformStarted);
         if (!res.ok) {
           setStatus(parseApiErrorBody(buffer, res.status), 'error');
           setSteps('file');
@@ -641,12 +653,20 @@
         const skippedEmpty = parseInt(res.headers.get('X-Skipped-Empty-Rows') || '0', 10);
         const valErrs = parseInt(res.headers.get('X-Validation-Error-Count') || '0', 10);
         const valList = parseValidationHeader(res.headers.get('X-Validation-Errors'));
+        const processMs = parseInt(res.headers.get('X-Process-Time-Ms') || '0', 10);
         resultName = parseFilenameFromDisposition(res.headers.get('Content-Disposition'))
           || buildOutputName() || 'result_dsp.xlsx';
 
         const parts = [];
         if (rows) parts.push(`Записано строк: ${rows}`);
         parts.push(`Пустых строк во входе (пропущено): ${skippedEmpty}`);
+        const processLabel = formatDuration(processMs || totalMs);
+        if (processLabel) {
+          parts.push(`Время преобразования: ${processLabel}`);
+          if (processMs > 0 && totalMs > processMs + 500) {
+            parts.push(`всего с загрузкой: ${formatDuration(totalMs)}`);
+          }
+        }
         let hint = parts.join(' · ');
         if (valErrs > 0) {
           hint += '. Исправьте замечания ниже или скачайте файл с оговоркой.';

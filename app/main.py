@@ -1,4 +1,5 @@
 import asyncio
+import time
 from io import BytesIO
 from urllib.parse import quote
 
@@ -119,8 +120,8 @@ async def api_transform(
     report_month: int = Form(...),
     report_year: int = Form(...),
 ):
-    if not file.filename or not file.filename.lower().endswith((".xlsx", ".xlsm")):
-        raise HTTPException(400, "Нужен файл .xlsx или .xlsm")
+    if not file.filename or not file.filename.lower().endswith((".xlsx", ".xlsm", ".xls")):
+        raise HTTPException(400, "Нужен файл .xlsx, .xlsm или .xls")
 
     entry = get_catalog_entry(partner_id)
     if entry is None:
@@ -147,6 +148,7 @@ async def api_transform(
     except (KeyError, ValueError) as e:
         raise HTTPException(400, str(e)) from e
 
+    process_started = time.perf_counter()
     try:
         result = await asyncio.to_thread(
             transform_source,
@@ -154,6 +156,7 @@ async def api_transform(
             profile,
             template_path=TEMPLATE_PATH,
             output_filename=out_name,
+            source_filename=file.filename,
         )
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
@@ -166,11 +169,13 @@ async def api_transform(
     validation_errors = await asyncio.to_thread(
         validate_workbook_bytes, result.output_bytes, profile
     )
+    process_ms = int((time.perf_counter() - process_started) * 1000)
     headers = {
         "Content-Disposition": _content_disposition(out_name),
         "X-Rows-Written": str(result.rows_written),
         "X-Skipped-Empty-Rows": str(result.skipped_empty_rows),
         "X-Validation-Error-Count": str(len(validation_errors)),
+        "X-Process-Time-Ms": str(process_ms),
     }
     encoded_errors = encode_validation_errors(validation_errors)
     if encoded_errors:

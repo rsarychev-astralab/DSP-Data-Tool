@@ -1,11 +1,9 @@
 from dataclasses import dataclass
-from io import BytesIO
 from pathlib import Path
 from typing import Any, BinaryIO
 
-import openpyxl
-
 from app.config import TEMPLATE_PATH
+from app.engine.xls_source import open_source_workbook
 from app.engine.normalize import has_value, normalize_field
 
 # Если во входе нет «вида деятельности», подставляем по предмету договора (часто adriver).
@@ -116,6 +114,7 @@ def transform_source(
     *,
     template_path: Path = TEMPLATE_PATH,
     output_filename: str = "result.xlsx",
+    source_filename: str | None = None,
 ) -> TransformResult:
     if not template_path.exists():
         raise FileNotFoundError(f"Template not found: {template_path}")
@@ -123,10 +122,9 @@ def transform_source(
     headers, descriptions = load_template_headers(template_path)
     wb, ws = create_output_workbook(headers, descriptions)
 
-    if isinstance(source, Path):
-        src_wb = openpyxl.load_workbook(source, read_only=True, data_only=True)
-    else:
-        src_wb = openpyxl.load_workbook(BytesIO(source.read()), read_only=True, data_only=True)
+    src_wb, _is_xls = open_source_workbook(
+        source, filename=source_filename or (str(source) if isinstance(source, Path) else None)
+    )
 
     if profile.sheet not in src_wb.sheetnames:
         available = ", ".join(src_wb.sheetnames)
@@ -161,6 +159,9 @@ def transform_source(
                     )
         record = build_record(raw, profile)
         if not record:
+            continue
+        if "erid" in profile.column_map and not has_value(record.get("erid")):
+            skipped_empty += 1
             continue
         if "contractor_name" in profile.column_map and not has_value(
             record.get("contractor_name")
