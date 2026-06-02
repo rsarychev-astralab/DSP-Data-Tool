@@ -1311,11 +1311,10 @@
     fetch('/api/partners').then(r => r.json()).then(d => {
       partners = (d.partners || []).slice().sort((a, b) => a.display_name.localeCompare(b.display_name, 'ru'));
       if (!partners.length) return setStatus('Справочник DSP пуст', 'error');
-      if ((d.warnings || []).length) {
-        setStatus('Справочник: ' + d.warnings.join('; '), 'warn');
-      }
-      const preferred = partners.find(p => p.has_profile) || partners[0];
-      selectPartner(preferred);
+      selectedPartnerId = '';
+      partnerSearch.value = '';
+      renderInfo(null);
+      updateSubmitState();
       setSteps('dsp');
     }).catch(e => setStatus('Ошибка загрузки списка DSP: ' + e.message, 'error'));
   </script>

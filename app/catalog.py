@@ -45,6 +45,29 @@ def _parse_report(val) -> bool | None:
     return None
 
 
+def _resolve_catalog_id(dsp_ids: list[str], display_name: str, seen: set[str]) -> str:
+    """Уникальный id партнёра: dsp id, иначе slug названия, при коллизии — суффикс."""
+    candidates: list[str] = []
+    if dsp_ids:
+        candidates.append(_slug(dsp_ids[0]))
+    if display_name:
+        name_slug = _slug(display_name)
+        if name_slug not in candidates:
+            candidates.append(name_slug)
+    if not candidates:
+        candidates.append("unknown")
+
+    for candidate in candidates:
+        if candidate not in seen:
+            return candidate
+
+    base = candidates[0]
+    n = 2
+    while f"{base}_{n}" in seen:
+        n += 1
+    return f"{base}_{n}"
+
+
 def _build_catalog_snapshot() -> CatalogSnapshot:
     path = SPRAVKA_DSP_PATH
     if not path.exists():
@@ -54,8 +77,7 @@ def _build_catalog_snapshot() -> CatalogSnapshot:
     ws = wb["DSP"] if "DSP" in wb.sheetnames else wb.active
 
     entries: list[DspCatalogEntry] = []
-    seen: dict[str, str] = {}
-    warnings: list[str] = []
+    seen: set[str] = set()
 
     for row in ws.iter_rows(min_row=2, values_only=True):
         if not row or not any(cell is not None and str(cell).strip() for cell in row):
@@ -65,13 +87,8 @@ def _build_catalog_snapshot() -> CatalogSnapshot:
         if not display_name and not dsp_id_raw:
             continue
         dsp_ids = [p.strip() for p in dsp_id_raw.split(",") if p.strip()]
-        catalog_id = _slug(dsp_ids[0] if dsp_ids else display_name)
-        if catalog_id in seen:
-            warnings.append(
-                f"Дубликат id «{catalog_id}»: «{seen[catalog_id]}» и «{display_name or catalog_id}»"
-            )
-        else:
-            seen[catalog_id] = display_name or catalog_id
+        catalog_id = _resolve_catalog_id(dsp_ids, display_name, seen)
+        seen.add(catalog_id)
 
         profile_id = resolve_profile_id(catalog_id)
         has_profile = has_transform_profile(catalog_id)
@@ -94,7 +111,7 @@ def _build_catalog_snapshot() -> CatalogSnapshot:
             )
         )
     wb.close()
-    return CatalogSnapshot(tuple(entries), tuple(warnings))
+    return CatalogSnapshot(tuple(entries), ())
 
 
 @lru_cache(maxsize=1)
