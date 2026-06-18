@@ -243,9 +243,9 @@
         </div>
 
         <div id="download-actions" class="d-grid gap-2 mb-3 d-none" aria-live="polite">
-          <button type="button" class="btn btn-success btn-lg" id="download">Скачать результат</button>
-          <button type="button" class="btn btn-outline-warning d-none" id="download-force">
-            Скачать с замечаниями
+          <button type="button" class="btn btn-success btn-lg" id="download">Скачать файл</button>
+          <button type="button" class="btn btn-outline-warning d-none" id="download-remarks">
+            Скачать файл замечаний
           </button>
         </div>
 
@@ -356,7 +356,7 @@
     const resultInfo = document.getElementById('result-info');
     const resultHint = document.getElementById('result-hint');
     const downloadBtn = document.getElementById('download');
-    const downloadForceBtn = document.getElementById('download-force');
+    const downloadRemarksBtn = document.getElementById('download-remarks');
     const validationErrorsEl = document.getElementById('validation-errors');
     const validationFieldsSummary = document.getElementById('validation-fields-summary');
     const validationRowsSummary = document.getElementById('validation-rows-summary');
@@ -380,8 +380,9 @@
     };
 
     let partners = [], selectedPartnerId = '', listHighlight = -1;
-    let resultBlob = null, resultName = 'result_dsp.xlsx';
+    let resultBlob = null, resultName = 'result_dsp.xlsx', remarksName = '';
     let validationErrors = [];
+    let hasValidationIssues = false;
 
     const decodeBase64Utf8 = value => {
       const binary = atob(value);
@@ -524,6 +525,7 @@
 
     const renderValidationErrors = (errors, rowNumbersFromHeader = [], totalCount = 0) => {
       validationErrors = errors;
+      hasValidationIssues = totalCount > 0 || errors.length > 0;
       if (!errors.length) {
         validationErrorsEl.classList.add('d-none');
         validationFieldsSummary.classList.add('d-none');
@@ -532,8 +534,9 @@
         validationRowsSummary.textContent = '';
         validationErrorsList.innerHTML = '';
         downloadBtn.classList.remove('d-none');
-        downloadForceBtn.classList.add('d-none');
         downloadBtn.disabled = !resultBlob;
+        downloadRemarksBtn.classList.toggle('d-none', !hasValidationIssues);
+        downloadRemarksBtn.disabled = !resultBlob || !hasValidationIssues;
         return;
       }
       validationErrorsEl.classList.remove('d-none');
@@ -565,9 +568,10 @@
             + (totalCount > errors.length ? ` (в файле всего ${totalCount})` : '')
             + '</li>'
           : '');
-      downloadBtn.classList.add('d-none');
-      downloadForceBtn.classList.remove('d-none');
-      downloadForceBtn.disabled = !resultBlob;
+      downloadBtn.classList.remove('d-none');
+      downloadBtn.disabled = !resultBlob;
+      downloadRemarksBtn.classList.remove('d-none');
+      downloadRemarksBtn.disabled = !resultBlob;
     };
 
     const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -793,7 +797,9 @@
 
     const clearResult = () => {
       resultBlob = null;
-      renderValidationErrors([], '');
+      remarksName = '';
+      hasValidationIssues = false;
+      renderValidationErrors([], '', 0);
       showResult(false);
     };
 
@@ -1026,6 +1032,9 @@
         const processMs = parseInt(headers['x-process-time-ms'] || '0', 10);
         resultName = parseFilenameFromDisposition(headers['content-disposition'])
           || buildOutputName() || 'result_dsp.xlsx';
+        remarksName = resultName.toLowerCase().endsWith('.xlsx')
+          ? resultName.slice(0, -5) + '_log.xlsx'
+          : resultName + '_log.xlsx';
 
         const parts = [];
         if (rows) parts.push(`Записано строк: ${rows}`);
@@ -1082,7 +1091,53 @@
     };
 
     downloadBtn.addEventListener('click', triggerDownload);
-    downloadForceBtn.addEventListener('click', triggerDownload);
+
+    downloadRemarksBtn.addEventListener('click', async () => {
+      if (!resultBlob || !hasValidationIssues) return;
+      if (!selectedPartnerId) return setStatus('Выберите DSP из списка', 'error');
+
+      const prevHtml = downloadRemarksBtn.innerHTML;
+      downloadRemarksBtn.disabled = true;
+      downloadRemarksBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Подготовка…';
+
+      const form = new FormData();
+      form.append('file', resultBlob, resultName);
+      form.append('partner_id', selectedPartnerId);
+      form.append('report_month', reportMonth.value);
+      form.append('report_year', reportYear.value);
+
+      try {
+        const { status, buffer, headers } = await postFormDataWithProgress(
+          '/api/validation/remarks',
+          form,
+          {
+            serverLabel: 'Формирование файла замечаний…',
+            downloadLabel: 'Скачивание файла замечаний',
+          }
+        );
+        if (status < 200 || status >= 300) {
+          setStatus(parseApiErrorBody(buffer, status), 'error');
+          return;
+        }
+        const name = parseFilenameFromDisposition(headers['content-disposition']) || remarksName;
+        const blob = new Blob([buffer], {
+          type: headers['content-type']
+            || 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        });
+        const u = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = u;
+        a.download = name;
+        a.click();
+        URL.revokeObjectURL(u);
+        setStatus(`Файл замечаний «${name}» сохранён (${formatSize(blob.size)}).`, 'ok');
+      } catch (e) {
+        setStatus('Сеть: ' + e.message, 'error');
+      } finally {
+        downloadRemarksBtn.innerHTML = prevHtml;
+        downloadRemarksBtn.disabled = !resultBlob || !hasValidationIssues;
+      }
+    });
 
     const matchAttrsInfo = document.getElementById('match-attrs-info');
     const matchFileInput = document.getElementById('match-file');

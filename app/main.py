@@ -15,6 +15,7 @@ from app.profiles.loader import has_transform_profile, load_profile
 from app.reporting import build_output_filename, validate_report_period
 from app.source_data import save_source_file
 from app.matching.match import match_workbook_bytes, resolve_contract_attrs_path
+from app.validation.remarks import build_remarks_filename, build_validation_remarks_bytes
 from app.validation.validate import validate_workbook_bytes
 
 app = FastAPI(title="DSP Transform", version="0.1.0")
@@ -188,6 +189,65 @@ async def api_transform(
     headers["Content-Length"] = str(len(result.output_bytes))
     return Response(
         content=result.output_bytes,
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        headers=headers,
+    )
+
+
+@app.post("/api/validation/remarks")
+async def api_validation_remarks(
+    file: UploadFile = File(...),
+    partner_id: str = Form(...),
+    report_month: int = Form(...),
+    report_year: int = Form(...),
+):
+    if not file.filename or not file.filename.lower().endswith((".xlsx", ".xlsm", ".xls")):
+        raise HTTPException(400, "Нужен файл .xlsx, .xlsm или .xls")
+
+    entry = get_catalog_entry(partner_id)
+    if entry is None:
+        raise HTTPException(404, f"DSP не найден в справочнике: {partner_id}")
+
+    if not has_transform_profile(partner_id):
+        raise HTTPException(
+            400,
+            f"Профиль преобразования для «{entry.display_name}» ещё не настроен.",
+        )
+
+    try:
+        validate_report_period(report_month, report_year)
+    except ValueError as e:
+        raise HTTPException(400, str(e)) from e
+
+    content = await file.read()
+    if len(content) > 50 * 1024 * 1024:
+        raise HTTPException(400, "Файл больше 50 МБ")
+
+    try:
+        profile = load_profile(partner_id)
+    except (KeyError, ValueError) as e:
+        raise HTTPException(400, str(e)) from e
+
+    validation = await asyncio.to_thread(
+        validate_workbook_bytes, content, profile
+    )
+    if not validation.errors:
+        raise HTTPException(400, "Замечаний нет — файл замечаний не требуется")
+
+    out_name = build_output_filename(partner_id, report_month, report_year)
+    remarks_name = build_remarks_filename(out_name)
+    remarks_bytes = build_validation_remarks_bytes(
+        validation,
+        partner_name=entry.display_name,
+        source_filename=file.filename,
+    )
+    headers = {
+        "Content-Disposition": _content_disposition(remarks_name),
+        "X-Validation-Error-Count": str(len(validation.errors)),
+        "Content-Length": str(len(remarks_bytes)),
+    }
+    return Response(
+        content=remarks_bytes,
         media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         headers=headers,
     )
