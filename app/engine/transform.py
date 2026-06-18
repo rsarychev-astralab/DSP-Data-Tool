@@ -6,17 +6,6 @@ from app.config import TEMPLATE_PATH
 from app.engine.xls_source import open_source_workbook
 from app.engine.normalize import has_value, normalize_field
 
-# Если во входе нет «вида деятельности», подставляем по предмету договора (часто adriver).
-_SUBJECT_DEFAULT_ACTIVITY = {
-    "Distribution": "Distribution",
-    "DistributionOrganization": "Distribution",
-    "Mediation": "Distribution",
-    "Representation": "Distribution",
-    "Commercial": "Commercial",
-    "Conclude": "Conclude",
-    "Other": "Other",
-    "None": "None",
-}
 from app.engine.template import (
     create_output_workbook,
     load_template_headers,
@@ -98,12 +87,6 @@ def build_record(raw: dict, profile: PartnerProfile) -> dict:
                 val = profile.constants[key]
         if has_value(val):
             set_field(key, normalize_field(key, val))
-
-    if "activity_type" in field_keys and not has_value(record.get("activity_type")):
-        subject = record.get("contract_subject")
-        fallback = _SUBJECT_DEFAULT_ACTIVITY.get(subject)
-        if fallback:
-            record["activity_type"] = fallback
 
     return record
 

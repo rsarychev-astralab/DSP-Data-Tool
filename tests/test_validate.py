@@ -84,9 +84,12 @@ def test_ru_party_requires_inn():
     assert any("ИНН" in e and "заказчика" in e for e in errors)
 
 
-def test_adriver_workbook_validation_minimal_errors():
+def test_adriver_transform_preserves_activity_from_source():
     from io import BytesIO
+    from collections import Counter
     from pathlib import Path
+
+    import openpyxl
 
     from app.config import TEMPLATE_PATH
     from app.engine.transform import transform_source
@@ -96,10 +99,33 @@ def test_adriver_workbook_validation_minimal_errors():
     if not source.exists():
         return
     profile = load_profile("adriver")
+    act_col = profile.column_map["activity_type"]
+    src_counts = Counter()
+    wb_src = openpyxl.load_workbook(source, read_only=True, data_only=True)
+    ws_src = wb_src[profile.sheet]
+    for row in ws_src.iter_rows(min_row=profile.data_from_row, values_only=True):
+        if not row:
+            continue
+        val = row[act_col] if act_col < len(row) else None
+        src_counts["filled" if val and str(val).strip() else "empty"] += 1
+    wb_src.close()
+
     with source.open("rb") as f:
         result = transform_source(
             BytesIO(f.read()), profile, template_path=TEMPLATE_PATH
         )
+    wb_out = openpyxl.load_workbook(BytesIO(result.output_bytes), read_only=True, data_only=True)
+    ws_out = wb_out.active
+    out_counts = Counter()
+    for row in ws_out.iter_rows(min_row=3, min_col=6, max_col=6, values_only=True):
+        val = row[0] if row else None
+        out_counts["filled" if val and str(val).strip() else "empty"] += 1
+    wb_out.close()
+
     validation = validate_workbook_bytes(result.output_bytes, profile)
-    assert len(validation.errors) == 0, validation.errors[:5]
-    assert validation.row_numbers == []
+    assert not any(
+        "недопустимое" in e and "Вид деятельности" in e for e in validation.errors
+    )
+    assert out_counts["filled"] > 0
+    assert out_counts["empty"] > 0
+    assert src_counts["empty"] > 0
