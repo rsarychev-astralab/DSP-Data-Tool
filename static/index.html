@@ -253,6 +253,7 @@
           <p class="small text-success mb-2 mb-md-0" id="result-hint"></p>
           <div id="validation-errors" class="d-none mb-0">
             <div class="small fw-bold text-danger mt-2">Замечания проверки шаблона</div>
+            <p id="validation-fields-summary" class="small text-danger mb-1 d-none"></p>
             <p id="validation-rows-summary" class="small text-danger mb-1 d-none"></p>
             <ul id="validation-errors-list" class="validation-list mb-0 ps-3"></ul>
           </div>
@@ -357,6 +358,7 @@
     const downloadBtn = document.getElementById('download');
     const downloadForceBtn = document.getElementById('download-force');
     const validationErrorsEl = document.getElementById('validation-errors');
+    const validationFieldsSummary = document.getElementById('validation-fields-summary');
     const validationRowsSummary = document.getElementById('validation-rows-summary');
     const validationErrorsList = document.getElementById('validation-errors-list');
     const statusEl = document.getElementById('status');
@@ -410,6 +412,34 @@
     };
 
     const ROW_ERROR_RE = /^Строка (\d+):\s*(.+)$/;
+    const EMPTY_FIELD_RE = /^поле «([^»]+)» пустое$/;
+
+    const buildFieldEmptySummary = errors => {
+      const byField = new Map();
+      for (const e of errors) {
+        const m = String(e).match(ROW_ERROR_RE);
+        if (!m) continue;
+        const emptyMatch = m[2].match(EMPTY_FIELD_RE);
+        if (!emptyMatch) continue;
+        const field = emptyMatch[1];
+        if (!byField.has(field)) byField.set(field, []);
+        byField.get(field).push(parseInt(m[1], 10));
+      }
+      if (!byField.size) return '';
+      const lines = [];
+      for (const [field, rows] of [...byField.entries()].sort((a, b) => b[1].length - a[1].length)) {
+        const uniq = [...new Set(rows)].sort((a, b) => a - b);
+        lines.push(`«${field}» пустое — ${uniq.length} строк: ${formatRowNumbersList(uniq, { maxShown: 25 })}`);
+      }
+      return lines.join('; ');
+    };
+
+    const buildErrorsFromRowHeader = (rowNumbers, totalCount) => {
+      if (!rowNumbers.length) {
+        return totalCount > 0 ? [`Всего замечаний: ${totalCount}`] : [];
+      }
+      return rowNumbers.map(row => `Строка ${row}: есть пустые или некорректные поля`);
+    };
 
     const extractRowsFromErrors = errors => {
       const rows = new Set();
@@ -492,10 +522,12 @@
       return plain ? plain[1].trim() : null;
     };
 
-    const renderValidationErrors = (errors, rowNumbersFromHeader = []) => {
+    const renderValidationErrors = (errors, rowNumbersFromHeader = [], totalCount = 0) => {
       validationErrors = errors;
       if (!errors.length) {
         validationErrorsEl.classList.add('d-none');
+        validationFieldsSummary.classList.add('d-none');
+        validationFieldsSummary.textContent = '';
         validationRowsSummary.classList.add('d-none');
         validationRowsSummary.textContent = '';
         validationErrorsList.innerHTML = '';
@@ -505,6 +537,14 @@
         return;
       }
       validationErrorsEl.classList.remove('d-none');
+      const fieldSummary = buildFieldEmptySummary(errors);
+      if (fieldSummary) {
+        validationFieldsSummary.textContent = fieldSummary;
+        validationFieldsSummary.classList.remove('d-none');
+      } else {
+        validationFieldsSummary.classList.add('d-none');
+        validationFieldsSummary.textContent = '';
+      }
       const rowsFromHeader = parseValidationRowsHeader(rowNumbersFromHeader);
       const rowsFromErrors = extractRowsFromErrors(errors);
       const allRows = [...new Set([...rowsFromHeader, ...rowsFromErrors])].sort((a, b) => a - b);
@@ -517,9 +557,14 @@
         validationRowsSummary.classList.add('d-none');
         validationRowsSummary.textContent = '';
       }
-      const shown = errors.slice(0, 30);
+      const shownLimit = 50;
+      const shown = errors.slice(0, shownLimit);
       validationErrorsList.innerHTML = buildValidationListHtml(shown)
-        + (errors.length > 30 ? `<li class="text-muted">…и ещё ${errors.length - 30} замечаний</li>` : '');
+        + (errors.length > shownLimit
+          ? `<li class="text-muted">…и ещё ${errors.length - shownLimit} замечаний`
+            + (totalCount > errors.length ? ` (в файле всего ${totalCount})` : '')
+            + '</li>'
+          : '');
       downloadBtn.classList.add('d-none');
       downloadForceBtn.classList.remove('d-none');
       downloadForceBtn.disabled = !resultBlob;
@@ -999,8 +1044,11 @@
         showResult(true, hint);
         const valRows = headers['x-validation-rows'] || '';
         renderValidationErrors(
-          valList.length ? valList : (valErrs > 0 ? [`Всего замечаний: ${valErrs}`] : []),
-          valRows
+          valList.length
+            ? valList
+            : buildErrorsFromRowHeader(parseValidationRowsHeader(valRows), valErrs),
+          valRows,
+          valErrs
         );
 
         if (valErrs > 0) {

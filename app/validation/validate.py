@@ -98,6 +98,14 @@ def _field_active(profile: PartnerProfile | None, field: str) -> bool:
     return field in _profile_fields(profile)
 
 
+def _field_label(field: str) -> str:
+    return HEADERS[COL_FIELD.index(field)]
+
+
+def _empty_field_error(row_num: int, field: str) -> str:
+    return f"Строка {row_num}: поле «{_field_label(field)}» пустое"
+
+
 def _is_required_scalar(profile: PartnerProfile | None, field: str) -> bool:
     if not _field_active(profile, field):
         return False
@@ -162,18 +170,15 @@ def _check_party(
     oksm = v[COL_FIELD.index(oksm_field)] if _field_active(profile, oksm_field) else ""
 
     if ptype in RU_PARTY and _field_active(profile, inn_field) and is_empty(inn):
-        errors.append(
-            f"Строка {row_num}: для «{role}» с типом {v[type_idx]!r} нужен ИНН"
-        )
+        errors.append(_empty_field_error(row_num, inn_field))
     if ptype in FOREIGN_PARTY:
         if _field_active(profile, oksm_field) and is_empty(oksm):
-            errors.append(
-                f"Строка {row_num}: для иностранного «{role}» нужен ОКСМ"
-            )
+            errors.append(_empty_field_error(row_num, oksm_field))
         if _field_active(profile, inn_field) and _field_active(profile, reg_field):
             if is_empty(inn) and is_empty(reg):
                 errors.append(
-                    f"Строка {row_num}: для иностранного «{role}» нужен ИНН или рег.номер"
+                    f"Строка {row_num}: поле «{_field_label(inn_field)}» или "
+                    f"«{_field_label(reg_field)}» пустое"
                 )
 
 
@@ -188,7 +193,7 @@ def validate_row(row_num: int, values, profile: PartnerProfile | None) -> list[s
             continue
         idx = COL_FIELD.index(field)
         if is_empty(v[idx]):
-            errors.append(f"Строка {row_num}: обязательное поле «{HEADERS[idx]}»")
+            errors.append(_empty_field_error(row_num, field))
 
     for field in ENUM_BY_FIELD:
         if not _field_active(profile, field):

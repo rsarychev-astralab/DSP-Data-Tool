@@ -76,6 +76,13 @@ def test_validate_row_rejects_bad_contract_type():
     assert any("Тип договора" in e for e in errors)
 
 
+def test_validate_row_reports_empty_field_by_name():
+    row = _full_row()
+    row[5] = ""
+    errors = validate_row(3, row, None)
+    assert any("Строка 3: поле «Вид деятельности» пустое" in e for e in errors)
+
+
 def test_ru_party_requires_inn():
     profile = load_profile("adriver")
     row = _full_row()
