@@ -124,6 +124,7 @@ def test_match_finds_contract_and_outputs_ids(tmp_path, monkeypatch):
     assert ws.cell(3, 4).value == "1002"
     ws2 = out[OUTPUT_SHEET_UPLOAD]
     assert ws2.cell(1, 1).value == "ERID"
+    assert ws2.cell(1, 7).value == "Тип заказчика"
     assert ws2.cell(1, len(UPLOAD_DETAIL_COLUMNS) + 1).value == "ID в OTM"
     assert ws2.cell(3, 2).value == "DOG-42"
     assert ws2.cell(3, len(UPLOAD_DETAIL_COLUMNS) + 1).value == "999"

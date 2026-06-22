@@ -9,6 +9,7 @@ COPY app ./app
 COPY static ./static
 COPY "Справка" "./Справка"
 COPY "Шаблон" "./Шаблон"
+RUN mkdir -p "Исходные данные"
 
 ENV PORT=8000
 EXPOSE 8000

@@ -1,9 +1,10 @@
 import base64
 import json
 
-MAX_VALIDATION_ERRORS_IN_HEADER = 80
-_MAX_HEADER_BYTES = 8000
-_MAX_VALIDATION_ROWS_CHARS = 4000
+# Nginx proxy_buffer_size is often 4–8 KB for all upstream response headers.
+MAX_VALIDATION_ERRORS_IN_HEADER = 40
+_MAX_HEADER_BYTES = 2048
+_MAX_VALIDATION_ROWS_CHARS = 512
 
 
 def encode_validation_errors(errors: list[str]) -> str | None:

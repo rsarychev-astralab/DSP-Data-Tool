@@ -36,6 +36,7 @@ UPLOAD_DETAIL_COLUMNS: tuple[tuple[str, str], ...] = (
     ("Тип договора", "contract_type"),
     ("Предмет договора", "contract_subject"),
     ("Вид деятельности", "activity_type"),
+    ("Тип заказчика", "customer_type"),
     ("Заказчик", "customer_name"),
     ("ИНН заказчика или его аналог", "customer_inn"),
     ("Рег.номер заказчика", "customer_reg_no"),
