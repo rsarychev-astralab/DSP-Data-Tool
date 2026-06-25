@@ -8,7 +8,9 @@ from app.config import PROFILES_DIR
 from app.engine.header_check import ColumnHeaderRule, HeaderCheck
 from app.engine.lookups import TEMPLATE_COLUMNS
 
-PROFILE_ALIASES: dict[str, str] = {}
+PROFILE_ALIASES: dict[str, str] = {
+    "between_low": "between",
+}
 
 
 @dataclass

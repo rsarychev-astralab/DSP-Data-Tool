@@ -20,3 +20,12 @@ def test_normalize_text_keeps_non_whole_and_text():
 def test_normalize_field_contract_and_inn():
     assert normalize_field("contract_no", 1.0) == "1"
     assert normalize_field("customer_inn", 7700123456789.0) == "7700123456789"
+
+
+def test_normalize_between_party_types_and_vat():
+    assert normalize_field("customer_type", "resident_legal") == "LegalPerson"
+    assert normalize_field("customer_type", "resident_entrepreneur") == "IndividualEntrepreneur"
+    assert normalize_field("customer_type", "not_resident_legal") == "ForeignLegalPerson"
+    assert normalize_field("customer_type", "resident_individual") == "PhysicalPerson"
+    assert normalize_field("contract_type", "additional-agreement") == "Additional"
+    assert normalize_field("vat_included", "1") == "yes"

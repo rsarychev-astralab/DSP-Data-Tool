@@ -1,0 +1,49 @@
+id: between
+display_name: between
+
+source:
+  sheet: Default
+  data_from_row: 2
+
+header_check:
+  row: 1
+  columns:
+    0: [Сумма]
+    1: [Показы]
+    2: [ЕРИД, erid]
+    3: [ИНН, Рекламодателя]
+    7: [ИНН, Исполнителя]
+    11: [Номер договора]
+    12: [Дата заключения договора]
+    13: [Тип договора]
+    16: [НДС]
+
+column_map:
+  amount: 0
+  impressions: 1
+  erid: 2
+  customer_inn: 3
+  customer_name: 4
+  customer_type: 5
+  contractor_inn: 7
+  contractor_name: 8
+  contractor_type: 9
+  contract_no: 11
+  contract_date: 12
+  contract_type: 13
+  contract_subject: 14
+  activity_type: 15
+  vat_included: 16
+  customer_oksm: 24
+  customer_reg_no: 25
+  contractor_oksm: 28
+  contractor_reg_no: 29
+
+optional_output_fields:
+  - customer_reg_no
+  - customer_oksm
+  - contractor_reg_no
+  - contractor_oksm
+  - activity_type
+
+constants: {}
