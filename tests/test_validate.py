@@ -136,3 +136,26 @@ def test_adriver_transform_preserves_activity_from_source():
     assert out_counts["filled"] > 0
     assert out_counts["empty"] > 0
     assert src_counts["empty"] > 0
+
+
+def test_validate_records_matches_workbook_validation():
+    from io import BytesIO
+
+    import openpyxl
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.append(["h1", "h2"])
+    ws.append(["h1", "h2"])
+    ws.append(["erid"] + [""] * 18)
+    buf = BytesIO()
+    wb.save(buf)
+    data = buf.getvalue()
+
+    from app.validation.validate import validate_records
+
+    records = [{"erid": "erid"}]
+    by_records = validate_records(records, None)
+    by_workbook = validate_workbook_bytes(data, None)
+    assert by_records.row_numbers == by_workbook.row_numbers
+    assert len(by_records.errors) == len(by_workbook.errors)

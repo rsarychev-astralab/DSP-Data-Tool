@@ -22,6 +22,7 @@ class TransformResult:
     rows_written: int
     skipped_empty_rows: int
     filename: str
+    records: list[dict]
 
 
 def _is_empty_marker(val: Any, markers: tuple[str, ...]) -> bool:
@@ -166,4 +167,5 @@ def transform_source(
         rows_written=len(records),
         skipped_empty_rows=skipped_empty,
         filename=output_filename,
+        records=records,
     )

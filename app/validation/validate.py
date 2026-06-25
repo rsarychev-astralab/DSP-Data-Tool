@@ -226,6 +226,23 @@ def validate_row(row_num: int, values, profile: PartnerProfile | None) -> list[s
     return errors
 
 
+def validate_records(
+    records: list[dict], profile: PartnerProfile | None = None
+) -> ValidationResult:
+    all_errors: list[str] = []
+    problem_rows: list[int] = []
+    if not records:
+        return ValidationResult(errors=["Нет строк данных"], row_numbers=[])
+    for i, record in enumerate(records):
+        row_num = i + 3
+        values = [record.get(field) for field in COL_FIELD]
+        row_errors = validate_row(row_num, values, profile)
+        if row_errors:
+            problem_rows.append(row_num)
+            all_errors.extend(row_errors)
+    return ValidationResult(errors=all_errors, row_numbers=problem_rows)
+
+
 def validate_workbook_bytes(
     data: bytes, profile: PartnerProfile | None = None
 ) -> ValidationResult:

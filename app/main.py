@@ -16,7 +16,7 @@ from app.reporting import build_output_filename, validate_report_period
 from app.source_data import save_source_file
 from app.matching.match import match_workbook_bytes, resolve_contract_attrs_path
 from app.validation.remarks import build_remarks_filename, build_validation_remarks_bytes
-from app.validation.validate import validate_workbook_bytes
+from app.validation.validate import validate_records, validate_workbook_bytes
 
 app = FastAPI(title="DSP Transform", version="0.1.0")
 
@@ -168,9 +168,7 @@ async def api_transform(
     if result.rows_written == 0:
         raise HTTPException(400, "Нет данных для записи")
 
-    validation = await asyncio.to_thread(
-        validate_workbook_bytes, result.output_bytes, profile
-    )
+    validation = validate_records(result.records, profile)
     process_ms = int((time.perf_counter() - process_started) * 1000)
     headers = {
         "Content-Disposition": _content_disposition(out_name),
