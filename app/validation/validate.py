@@ -12,28 +12,16 @@ from app.engine.lookups import (
     CONTRACT_TYPE,
     PARTY_TYPE,
     SUBJECT_TYPE,
+    TEMPLATE_COL_COUNT,
+    TEMPLATE_COLUMNS,
+    TEMPLATE_HEADERS,
 )
 
 if TYPE_CHECKING:
     from app.profiles.loader import PartnerProfile
 
-HEADERS = [
-    "ERID", "Номер изначального договора", "Дата изначального договора",
-    "Тип договора", "Предмет договора", "Вид деятельности",
-    "Тип заказчика", "Заказчик", "ИНН заказчика или его аналог",
-    "Рег.номер заказчика", "ОКСМ заказчика", "Тип исполнителя", "Исполнитель",
-    "ИНН исполнителя или его аналог", "Рег.номер исполнителя", "ОКСМ исполнителя",
-    "Включая НДС", "Показы", "Сумма",
-]
-
-# Индекс колонки → ключ поля в record / column_map
-COL_FIELD = [
-    "erid", "contract_no", "contract_date", "contract_type", "contract_subject",
-    "activity_type", "customer_type", "customer_name", "customer_inn",
-    "customer_reg_no", "customer_oksm", "contractor_type", "contractor_name",
-    "contractor_inn", "contractor_reg_no", "contractor_oksm",
-    "vat_included", "impressions", "amount",
-]
+HEADERS = list(TEMPLATE_HEADERS)
+COL_FIELD = list(TEMPLATE_COLUMNS)
 
 CORE_REQUIRED = {
     "erid", "contract_no", "contract_date", "contract_type", "contract_subject",
@@ -184,8 +172,8 @@ def _check_party(
 
 def validate_row(row_num: int, values, profile: PartnerProfile | None) -> list[str]:
     errors: list[str] = []
-    v = [norm(x) for x in values[:19]]
-    while len(v) < 19:
+    v = [norm(x) for x in values[:TEMPLATE_COL_COUNT]]
+    while len(v) < TEMPLATE_COL_COUNT:
         v.append("")
 
     for field in COL_FIELD:
@@ -202,9 +190,13 @@ def validate_row(row_num: int, values, profile: PartnerProfile | None) -> list[s
         _check_enum(row_num, field, v[idx], errors)
 
     if _field_active(profile, "impressions"):
-        _check_number(row_num, "impressions", v[17], errors, integer=True)
+        _check_number(
+            row_num, "impressions", v[COL_FIELD.index("impressions")], errors, integer=True
+        )
     if _field_active(profile, "amount"):
-        _check_number(row_num, "amount", v[18], errors, integer=False)
+        _check_number(
+            row_num, "amount", v[COL_FIELD.index("amount")], errors, integer=False
+        )
 
     _check_party(
         row_num, v, profile, errors,
@@ -252,7 +244,7 @@ def validate_workbook_bytes(
     problem_rows: list[int] = []
     data_rows = 0
     for row_num, row in enumerate(
-        ws.iter_rows(min_row=3, max_col=19, values_only=True),
+        ws.iter_rows(min_row=3, max_col=TEMPLATE_COL_COUNT, values_only=True),
         start=3,
     ):
         values = list(row) if row else []

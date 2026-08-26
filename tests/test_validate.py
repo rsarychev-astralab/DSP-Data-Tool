@@ -1,23 +1,33 @@
 from app.profiles.loader import load_profile
-from app.validation.validate import validate_row, validate_workbook_bytes
+from app.validation.validate import COL_FIELD, validate_row, validate_workbook_bytes
+
+
+def _idx(field: str) -> int:
+    return COL_FIELD.index(field)
+
+
+def _empty_row():
+    return [""] * len(COL_FIELD)
 
 
 def _full_row(**overrides):
-    row = [""] * 19
+    row = _empty_row()
     defaults = {
-        0: "erid-1",
-        1: "dog-1",
-        2: "2025-01-01",
-        3: "Original",
-        4: "Distribution",
-        5: "Distribution",
-        6: "LegalPerson",
-        7: "Customer LLC",
-        8: "7700000000",
-        11: "LegalPerson",
-        12: "Contractor LLC",
-        13: "7700000001",
-        18: "1000",
+        _idx("erid"): "erid-1",
+        _idx("contract_no"): "dog-1",
+        _idx("contract_date"): "2025-01-01",
+        _idx("contract_type"): "Original",
+        _idx("contract_subject"): "Distribution",
+        _idx("activity_type"): "Distribution",
+        _idx("customer_type"): "LegalPerson",
+        _idx("customer_name"): "Customer LLC",
+        _idx("customer_inn"): "7700000000",
+        _idx("contractor_type"): "LegalPerson",
+        _idx("contractor_name"): "Contractor LLC",
+        _idx("contractor_inn"): "7700000001",
+        _idx("vat_included"): "yes",
+        _idx("impressions"): "100",
+        _idx("amount"): "1000",
     }
     defaults.update(overrides)
     for idx, val in defaults.items():
@@ -26,7 +36,7 @@ def _full_row(**overrides):
 
 
 def test_validate_row_requires_erid():
-    errors = validate_row(3, [""] * 19, None)
+    errors = validate_row(3, _empty_row(), None)
     assert any("ERID" in e for e in errors)
     assert all(e.startswith("Строка 3:") for e in errors)
 
@@ -40,8 +50,8 @@ def test_validate_workbook_collects_row_numbers():
     ws = wb.active
     ws.append(["h1", "h2"])
     ws.append(["h1", "h2"])
-    ws.append([""] * 19)
-    ws.append(["erid"] + [""] * 18)
+    ws.append(_empty_row())
+    ws.append(["erid"] + [""] * (len(COL_FIELD) - 1))
     buf = BytesIO()
     wb.save(buf)
     validation = validate_workbook_bytes(buf.getvalue(), None)
@@ -61,32 +71,36 @@ def test_adriver_allows_empty_reg_no_for_ru():
 
 def test_validate_row_accepts_normalized_contract_type():
     row = _full_row()
-    row[16] = "yes"
-    row[17] = "100"
     errors = validate_row(3, row, None)
     assert not any("недопустимое" in e and "Тип договора" in e for e in errors)
 
 
 def test_validate_row_rejects_bad_contract_type():
     row = _full_row()
-    row[3] = "NotARealType"
-    row[16] = "yes"
-    row[17] = "100"
+    row[_idx("contract_type")] = "NotARealType"
     errors = validate_row(3, row, None)
     assert any("Тип договора" in e for e in errors)
 
 
 def test_validate_row_reports_empty_field_by_name():
     row = _full_row()
-    row[5] = ""
+    row[_idx("activity_type")] = ""
     errors = validate_row(3, row, None)
     assert any("Строка 3: поле «Вид деятельности» пустое" in e for e in errors)
+
+
+def test_validate_row_allows_empty_addresses():
+    row = _full_row()
+    row[_idx("customer_address")] = ""
+    row[_idx("contractor_address")] = ""
+    errors = validate_row(3, row, None)
+    assert not any("Адрес" in e for e in errors)
 
 
 def test_ru_party_requires_inn():
     profile = load_profile("adriver")
     row = _full_row()
-    row[8] = ""
+    row[_idx("customer_inn")] = ""
     errors = validate_row(3, row, profile)
     assert any("ИНН" in e and "заказчика" in e for e in errors)
 
@@ -147,7 +161,7 @@ def test_validate_records_matches_workbook_validation():
     ws = wb.active
     ws.append(["h1", "h2"])
     ws.append(["h1", "h2"])
-    ws.append(["erid"] + [""] * 18)
+    ws.append(["erid"] + [""] * (len(COL_FIELD) - 1))
     buf = BytesIO()
     wb.save(buf)
     data = buf.getvalue()

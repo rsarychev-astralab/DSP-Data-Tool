@@ -13,32 +13,27 @@ from app.matching.match import (
     UPLOAD_DETAIL_COLUMNS,
     match_workbook_bytes,
 )
+from app.validation.validate import COL_FIELD, HEADERS
+
+
+def _idx(field: str) -> int:
+    return COL_FIELD.index(field)
 
 
 def _minimal_upload_bytes(**fields) -> bytes:
     wb = openpyxl.Workbook()
     ws = wb.active
-    for col, h in enumerate(
-        [
-            "ERID", "Номер изначального договора", "Дата изначального договора",
-            "Тип договора", "Предмет договора", "Вид деятельности",
-            "Тип заказчика", "Заказчик", "ИНН заказчика или его аналог",
-            "Рег.номер заказчика", "ОКСМ заказчика", "Тип исполнителя", "Исполнитель",
-            "ИНН исполнителя или его аналог", "Рег.номер исполнителя", "ОКСМ исполнителя",
-            "Включая НДС", "Показы", "Сумма",
-        ],
-        1,
-    ):
+    for col, h in enumerate(HEADERS, 1):
         ws.cell(1, col, h)
-    row = [""] * 19
-    row[0] = fields.get("erid", "erid-1")
-    row[1] = fields.get("contract_no", "dog-1")
-    row[2] = fields.get("contract_date", "2025-01-01")
-    row[3] = fields.get("contract_type", "Original")
-    row[4] = fields.get("contract_subject", "Distribution")
-    row[5] = fields.get("activity_type", "")
-    row[8] = fields.get("customer_inn", "7700000002")
-    row[13] = fields.get("contractor_inn", "7700000001")
+    row = [""] * len(COL_FIELD)
+    row[_idx("erid")] = fields.get("erid", "erid-1")
+    row[_idx("contract_no")] = fields.get("contract_no", "dog-1")
+    row[_idx("contract_date")] = fields.get("contract_date", "2025-01-01")
+    row[_idx("contract_type")] = fields.get("contract_type", "Original")
+    row[_idx("contract_subject")] = fields.get("contract_subject", "Distribution")
+    row[_idx("activity_type")] = fields.get("activity_type", "")
+    row[_idx("customer_inn")] = fields.get("customer_inn", "7700000002")
+    row[_idx("contractor_inn")] = fields.get("contractor_inn", "7700000001")
     for col, val in enumerate(row, 1):
         if val != "":
             ws.cell(3, col, val)
@@ -139,24 +134,24 @@ def test_match_by_contract_applies_to_all_erid_rows(tmp_path, monkeypatch):
 
     wb = openpyxl.Workbook()
     ws = wb.active
-    headers = [
-        "ERID", "Номер изначального договора", "Дата изначального договора",
-        "Тип договора", "Предмет договора", "Вид деятельности",
-        "Тип заказчика", "Заказчик", "ИНН заказчика или его аналог",
-        "Рег.номер заказчика", "ОКСМ заказчика", "Тип исполнителя", "Исполнитель",
-        "ИНН исполнителя или его аналог", "Рег.номер исполнителя", "ОКСМ исполнителя",
-        "Включая НДС", "Показы", "Сумма",
-    ]
-    for col, h in enumerate(headers, 1):
+    for col, h in enumerate(HEADERS, 1):
         ws.cell(1, col, h)
-    good = [
-        "erid-a", "DOG-42", "2025-01-01", "Original", "Distribution", "None",
-        "", "", "7700000002", "", "", "", "", "7700000001", "", "", "", 100, 10,
-    ]
-    bad_date = [
-        "erid-b", "DOG-42", "2099-12-31", "Original", "Distribution", "None",
-        "", "", "7700000002", "", "", "", "", "7700000001", "", "", "", 200, 20,
-    ]
+    good = [""] * len(COL_FIELD)
+    good[_idx("erid")] = "erid-a"
+    good[_idx("contract_no")] = "DOG-42"
+    good[_idx("contract_date")] = "2025-01-01"
+    good[_idx("contract_type")] = "Original"
+    good[_idx("contract_subject")] = "Distribution"
+    good[_idx("activity_type")] = "None"
+    good[_idx("customer_inn")] = "7700000002"
+    good[_idx("contractor_inn")] = "7700000001"
+    good[_idx("impressions")] = 100
+    good[_idx("amount")] = 10
+    bad_date = list(good)
+    bad_date[_idx("erid")] = "erid-b"
+    bad_date[_idx("contract_date")] = "2099-12-31"
+    bad_date[_idx("impressions")] = 200
+    bad_date[_idx("amount")] = 20
     for col, val in enumerate(good, 1):
         ws.cell(3, col, val)
     for col, val in enumerate(bad_date, 1):

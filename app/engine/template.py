@@ -3,7 +3,7 @@ from pathlib import Path
 
 import openpyxl
 
-from app.engine.lookups import TEMPLATE_COLUMNS
+from app.engine.lookups import TEMPLATE_COL_COUNT, TEMPLATE_COLUMNS
 from app.engine.normalize import has_value, normalize_text
 
 NUMERIC_FIELDS = frozenset({"impressions", "amount"})
@@ -15,8 +15,8 @@ AMOUNT_NUMBER_FORMAT = "General"
 def load_template_headers(template_path: Path):
     tpl_wb = openpyxl.load_workbook(template_path, read_only=True, data_only=True)
     tpl_ws = tpl_wb["Sheet1"]
-    headers = [tpl_ws.cell(1, c).value for c in range(1, 20)]
-    descriptions = [tpl_ws.cell(2, c).value for c in range(1, 20)]
+    headers = [tpl_ws.cell(1, c).value for c in range(1, TEMPLATE_COL_COUNT + 1)]
+    descriptions = [tpl_ws.cell(2, c).value for c in range(1, TEMPLATE_COL_COUNT + 1)]
     tpl_wb.close()
     return headers, descriptions
 

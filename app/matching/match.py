@@ -15,6 +15,7 @@ from app.config import (
     CONTRACT_ATTRS_SHEET,
     resolve_contract_attrs_path as _resolve_contract_attrs_path,
 )
+from app.engine.lookups import TEMPLATE_COL_COUNT, TEMPLATE_COLUMNS
 from app.engine.normalize import has_value
 from app.engine.template import TEXT_NUMBER_FORMAT, write_cell
 from app.matching.keys import build_match_key, norm_contract_no
@@ -38,11 +39,13 @@ UPLOAD_DETAIL_COLUMNS: tuple[tuple[str, str], ...] = (
     ("Вид деятельности", "activity_type"),
     ("Тип заказчика", "customer_type"),
     ("Заказчик", "customer_name"),
+    ("Адрес заказчика", "customer_address"),
     ("ИНН заказчика или его аналог", "customer_inn"),
     ("Рег.номер заказчика", "customer_reg_no"),
     ("ОКСМ заказчика", "customer_oksm"),
     ("Тип исполнителя", "contractor_type"),
     ("Исполнитель", "contractor_name"),
+    ("Адрес исполнителя", "contractor_address"),
     ("ИНН исполнителя или его аналог", "contractor_inn"),
     ("Рег.номер исполнителя", "contractor_reg_no"),
     ("ОКСМ исполнителя", "contractor_oksm"),
@@ -69,13 +72,16 @@ DB_HEADERS = {
 
 # Колонки выгрузки шаблона для метчинга (0-based)
 UPLOAD_COL = {
-    "erid": 0,
-    "contract_no": 1,
-    "contract_date": 2,
-    "contract_type": 3,
-    "contract_subject": 4,
-    "customer_inn": 8,
-    "contractor_inn": 13,
+    key: TEMPLATE_COLUMNS[key] - 1
+    for key in (
+        "erid",
+        "contract_no",
+        "contract_date",
+        "contract_type",
+        "contract_subject",
+        "customer_inn",
+        "contractor_inn",
+    )
 }
 
 
@@ -214,12 +220,10 @@ def _validate_transform_output(ws) -> None:
     for col, expected in enumerate(TEMPLATE_HEADERS, 1):
         actual = ws.cell(1, col).value
         if not has_value(actual):
-            if col <= 13:
-                raise ValueError(
-                    "Загрузите файл после преобразования с вкладки «Загрузка и преобразование». "
-                    f"В строке заголовков не хватает колонки «{expected}»."
-                )
-            continue
+            raise ValueError(
+                "Загрузите файл после преобразования с вкладки «Загрузка и преобразование». "
+                f"В строке заголовков не хватает колонки «{expected}»."
+            )
         if str(actual).strip() != expected:
             raise ValueError(
                 "Загрузите файл после преобразования с вкладки «Загрузка и преобразование», "
@@ -234,7 +238,7 @@ def _read_upload_rows(data: bytes) -> list[dict[str, Any]]:
         ws = wb.active
         _validate_transform_output(ws)
         rows: list[dict[str, Any]] = []
-        for row in ws.iter_rows(min_row=DATA_START_ROW, max_col=19, values_only=True):
+        for row in ws.iter_rows(min_row=DATA_START_ROW, max_col=TEMPLATE_COL_COUNT, values_only=True):
             values = list(row) if row else []
             if all(is_empty(x) for x in values):
                 continue

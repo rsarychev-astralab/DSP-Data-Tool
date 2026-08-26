@@ -22,17 +22,19 @@ COLUMNS = {
     "activity_type": 6,
     "customer_type": 7,
     "customer_name": 8,
-    "customer_inn": 9,
-    "customer_reg_no": 10,
-    "customer_oksm": 11,
-    "contractor_type": 12,
-    "contractor_name": 13,
-    "contractor_inn": 14,
-    "contractor_reg_no": 15,
-    "contractor_oksm": 16,
-    "vat_included": 17,
-    "impressions": 18,
-    "amount": 19,
+    "customer_address": 9,
+    "customer_inn": 10,
+    "customer_reg_no": 11,
+    "customer_oksm": 12,
+    "contractor_type": 13,
+    "contractor_name": 14,
+    "contractor_address": 15,
+    "contractor_inn": 16,
+    "contractor_reg_no": 17,
+    "contractor_oksm": 18,
+    "vat_included": 19,
+    "impressions": 20,
+    "amount": 21,
 }
 
 SOURCE_MAP = {
@@ -208,8 +210,8 @@ def main():
 
     tpl_wb = openpyxl.load_workbook(TEMPLATE)
     tpl_ws = tpl_wb["Sheet1"]
-    headers = [tpl_ws.cell(1, c).value for c in range(1, 20)]
-    descriptions = [tpl_ws.cell(2, c).value for c in range(1, 20)]
+    headers = [tpl_ws.cell(1, c).value for c in range(1, len(COLUMNS) + 1)]
+    descriptions = [tpl_ws.cell(2, c).value for c in range(1, len(COLUMNS) + 1)]
     tpl_wb.close()
 
     wb = openpyxl.Workbook()
