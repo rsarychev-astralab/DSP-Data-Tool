@@ -8,6 +8,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
   <style>
     :root {
       --bs-primary: #1a4a7a;
@@ -24,6 +25,23 @@
       border-bottom: 3px solid #0f2d4a;
     }
     .app-header .subtitle { font-size: 0.8125rem; opacity: 0.85; }
+    i.bi { vertical-align: -0.125em; }
+    .app-header .navbar-brand i.bi {
+      font-size: 1.25rem;
+      margin-right: 0.4rem;
+      vertical-align: -0.15em;
+    }
+    .app-nav .nav-link {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+    }
+    .app-nav .nav-link i.bi {
+      font-size: 1.05rem;
+      line-height: 1.25;
+      flex-shrink: 0;
+      margin-top: 0.05rem;
+    }
     .app-shell-inner,
     .app-shell {
       max-width: 72rem;
@@ -104,6 +122,10 @@
       margin-bottom: 1.25rem;
     }
     .step {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.3rem;
       flex: 1 1 auto;
       min-width: 4.5rem;
       text-align: center;
@@ -114,6 +136,7 @@
       background: #f1f5f9;
       border: 1px solid #e2e8f0;
     }
+    .step i.bi { font-size: 0.85rem; }
     .step.active { background: #e8f0f8; color: var(--erir-header); border-color: #b8cfe8; font-weight: 700; }
     .step.done { background: #ecfdf5; color: #166534; border-color: #bbf7d0; }
     .combobox-list { max-height: 14rem; overflow-y: auto; }
@@ -143,7 +166,24 @@
       border-color: var(--bs-primary);
       background: #f0f6fc;
     }
+    .drop-zone-icon {
+      font-size: 1.75rem;
+      color: #94a3b8;
+      display: block;
+      margin-bottom: 0.35rem;
+      transition: color 0.15s;
+    }
+    .drop-zone:hover .drop-zone-icon,
+    .drop-zone.dragover .drop-zone-icon { color: var(--bs-primary); }
     .drop-zone.has-file { border-style: solid; border-color: #94b8d9; background: #fff; text-align: left; }
+    .file-row .file-icon {
+      flex-shrink: 0;
+      font-size: 1.25rem;
+      color: #2d6a4f;
+      margin-top: 0.1rem;
+    }
+    .btn i.bi { margin-right: 0.35rem; }
+    .badge i.bi { margin-right: 0.25rem; }
     .drop-zone input[type=file] { display: none; }
     .file-meta { font-size: 0.875rem; word-break: break-all; }
     .file-meta .name { font-weight: 700; color: #1f2937; }
@@ -202,7 +242,7 @@
 <body class="d-flex flex-column">
   <header class="app-header navbar navbar-dark py-3">
     <div class="app-shell-inner w-100">
-      <span class="navbar-brand mb-0 h1 fs-5">DSP Data Tool</span>
+      <span class="navbar-brand mb-0 h1 fs-5"><i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i>DSP Data Tool</span>
       <div class="subtitle text-white-50 mt-1">Выгрузка партнёра → шаблон загрузки</div>
     </div>
   </header>
@@ -214,6 +254,7 @@
           <button class="nav-link active" id="tab-upload-btn" data-bs-toggle="tab"
                   data-bs-target="#tab-upload" type="button" role="tab"
                   aria-controls="tab-upload" aria-selected="true">
+            <i class="bi bi-arrow-left-right" aria-hidden="true"></i>
             Преобразование выгрузки
           </button>
         </li>
@@ -221,6 +262,7 @@
           <button class="nav-link" id="tab-matching-btn" data-bs-toggle="tab"
                   data-bs-target="#tab-matching" type="button" role="tab"
                   aria-controls="tab-matching" aria-selected="false">
+            <i class="bi bi-intersect" aria-hidden="true"></i>
             Сопоставление договоров
           </button>
         </li>
@@ -228,6 +270,7 @@
           <button class="nav-link" id="tab-dadata-btn" data-bs-toggle="tab"
                   data-bs-target="#tab-dadata" type="button" role="tab"
                   aria-controls="tab-dadata" aria-selected="false">
+            <i class="bi bi-building" aria-hidden="true"></i>
             Проверка юридических лиц
           </button>
         </li>
@@ -235,6 +278,7 @@
           <button class="nav-link" id="tab-fl-address-btn" data-bs-toggle="tab"
                   data-bs-target="#tab-fl-address" type="button" role="tab"
                   aria-controls="tab-fl-address" aria-selected="false">
+            <i class="bi bi-geo-alt" aria-hidden="true"></i>
             Адрес физического лица
           </button>
         </li>
@@ -247,10 +291,10 @@
           <div class="tab-pane fade show active" id="tab-upload" role="tabpanel"
                aria-labelledby="tab-upload-btn" tabindex="0">
         <nav class="steps" aria-label="Шаги">
-          <div class="step active" id="step-dsp">1. DSP</div>
-          <div class="step" id="step-file">2. Файл</div>
-          <div class="step" id="step-run">3. Обработка</div>
-          <div class="step" id="step-dl">4. Скачать</div>
+          <div class="step active" id="step-dsp"><i class="bi bi-buildings" aria-hidden="true"></i>1. DSP</div>
+          <div class="step" id="step-file"><i class="bi bi-file-earmark" aria-hidden="true"></i>2. Файл</div>
+          <div class="step" id="step-run"><i class="bi bi-gear" aria-hidden="true"></i>3. Обработка</div>
+          <div class="step" id="step-dl"><i class="bi bi-download" aria-hidden="true"></i>4. Скачать</div>
         </nav>
 
         <section class="mb-3" aria-labelledby="lbl-dsp">
@@ -285,11 +329,13 @@
                aria-label="Выберите или перетащите файл Excel">
             <input type="file" id="file" accept=".xlsx,.xlsm,.xls" />
             <div id="drop-placeholder">
+              <i class="bi bi-cloud-upload drop-zone-icon" aria-hidden="true"></i>
               <div class="text-muted small">Перетащите файл сюда или нажмите для выбора</div>
               <div class="text-muted small mt-1">Формат: .xlsx, .xlsm, .xls</div>
             </div>
             <div id="drop-selected" class="file-meta d-none">
               <div class="file-row">
+                <i class="bi bi-file-earmark-excel file-icon" aria-hidden="true"></i>
                 <div class="file-info">
                   <div class="name" id="file-name"></div>
                   <div class="text-muted small" id="file-size"></div>
@@ -302,9 +348,11 @@
         </section>
 
         <div class="d-grid gap-2 mb-2">
-          <button type="button" class="btn btn-primary btn-lg" id="submit" disabled>Преобразовать</button>
+          <button type="button" class="btn btn-primary btn-lg" id="submit" disabled>
+            <i class="bi bi-play-fill" aria-hidden="true"></i> Преобразовать
+          </button>
           <button type="button" class="btn btn-outline-secondary" id="save-sample" disabled>
-            Сохранить маппинг полей
+            <i class="bi bi-bookmark" aria-hidden="true"></i> Сохранить маппинг полей
           </button>
         </div>
         <p class="form-text mb-0" id="sample-name-preview"></p>
@@ -321,16 +369,20 @@
         </div>
 
         <div id="download-actions" class="d-grid gap-2 mb-3 d-none" aria-live="polite">
-          <button type="button" class="btn btn-success btn-lg" id="download">Скачать файл</button>
+          <button type="button" class="btn btn-success btn-lg" id="download">
+            <i class="bi bi-download" aria-hidden="true"></i> Скачать файл
+          </button>
           <button type="button" class="btn btn-outline-warning d-none" id="download-remarks">
-            Скачать файл замечаний
+            <i class="bi bi-exclamation-triangle" aria-hidden="true"></i> Скачать файл замечаний
           </button>
         </div>
 
         <div id="result-info" class="result-block d-none" aria-live="polite">
           <p class="small text-success mb-2 mb-md-0" id="result-hint"></p>
           <div id="validation-errors" class="d-none mb-0">
-            <div class="small fw-bold text-danger mt-2">Замечания проверки шаблона</div>
+            <div class="small fw-bold text-danger mt-2">
+              <i class="bi bi-exclamation-triangle" aria-hidden="true"></i> Замечания проверки шаблона
+            </div>
             <p id="validation-fields-summary" class="small text-danger mb-1 d-none"></p>
             <p id="validation-rows-summary" class="small text-danger mb-1 d-none"></p>
             <ul id="validation-errors-list" class="validation-list mb-0 ps-3"></ul>
@@ -352,9 +404,9 @@
             <div id="match-attrs-info" class="alert alert-light border small mb-3" role="status"></div>
 
             <nav class="steps mb-3" aria-label="Шаги метчинга">
-              <div class="step active" id="match-step-file">1. Файл преобразования</div>
-              <div class="step" id="match-step-run">2. Метчинг</div>
-              <div class="step" id="match-step-dl">3. Скачать</div>
+              <div class="step active" id="match-step-file"><i class="bi bi-file-earmark" aria-hidden="true"></i>1. Файл преобразования</div>
+              <div class="step" id="match-step-run"><i class="bi bi-gear" aria-hidden="true"></i>2. Метчинг</div>
+              <div class="step" id="match-step-dl"><i class="bi bi-download" aria-hidden="true"></i>3. Скачать</div>
             </nav>
 
             <section class="mb-4" aria-labelledby="lbl-match-file">
@@ -363,11 +415,13 @@
                    aria-label="Выберите файл результата преобразования">
                 <input type="file" id="match-file" accept=".xlsx,.xlsm,.xls" />
                 <div id="match-drop-placeholder">
+                  <i class="bi bi-cloud-upload drop-zone-icon" aria-hidden="true"></i>
                   <div class="text-muted small">Файл с вкладки «Преобразование выгрузки»</div>
                   <div class="text-muted small mt-1">.xlsx / .xlsm — шаблон загрузки DSP</div>
                 </div>
                 <div id="match-drop-selected" class="file-meta d-none">
                   <div class="file-row">
+                    <i class="bi bi-file-earmark-excel file-icon" aria-hidden="true"></i>
                     <div class="file-info">
                       <div class="name" id="match-file-name"></div>
                       <div class="text-muted small" id="match-file-size"></div>
@@ -381,7 +435,7 @@
 
             <div class="d-grid gap-2 mb-2">
               <button type="button" class="btn btn-primary btn-lg" id="match-submit" disabled>
-                Сметчить
+                <i class="bi bi-intersect" aria-hidden="true"></i> Сметчить
               </button>
             </div>
 
@@ -398,7 +452,7 @@
 
             <div id="match-download-actions" class="d-grid gap-2 mb-3 d-none" aria-live="polite">
               <button type="button" class="btn btn-success btn-lg" id="match-download">
-                Скачать сметченный файл
+                <i class="bi bi-download" aria-hidden="true"></i> Скачать сметченный файл
               </button>
             </div>
 
@@ -424,14 +478,14 @@
                 <button class="nav-link active" id="dadata-sub-single-btn" data-bs-toggle="tab"
                         data-bs-target="#dadata-panel-single" type="button" role="tab"
                         aria-controls="dadata-panel-single" aria-selected="true">
-                  Разовая проверка
+                  <i class="bi bi-person" aria-hidden="true"></i> Разовая проверка
                 </button>
               </li>
               <li class="nav-item" role="presentation">
                 <button class="nav-link" id="dadata-sub-batch-btn" data-bs-toggle="tab"
                         data-bs-target="#dadata-panel-batch" type="button" role="tab"
                         aria-controls="dadata-panel-batch" aria-selected="false">
-                  Массовая проверка
+                  <i class="bi bi-files" aria-hidden="true"></i> Массовая проверка
                 </button>
               </li>
             </ul>
@@ -447,7 +501,9 @@
                              spellcheck="false" placeholder="7707083893 или Сбербанк"
                              aria-autocomplete="list" aria-controls="dadata-suggestions"
                              aria-expanded="false" />
-                      <button type="button" class="btn btn-primary" id="dadata-check-btn">Проверить</button>
+                      <button type="button" class="btn btn-primary" id="dadata-check-btn">
+                        <i class="bi bi-search" aria-hidden="true"></i> Проверить
+                      </button>
                     </div>
                     <ul id="dadata-suggestions" class="dropdown-menu combobox-list w-100 shadow-sm" hidden></ul>
                   </div>
@@ -470,11 +526,13 @@
                     <input type="file" id="dadata-file"
                            accept=".xlsx,.xls,.csv,.txt,.tsv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain" />
                     <div id="dadata-drop-placeholder">
+                      <i class="bi bi-cloud-upload drop-zone-icon" aria-hidden="true"></i>
                       <div class="text-muted small">Перетащите файл сюда или нажмите для выбора</div>
                       <div class="text-muted small mt-1">.xlsx, .xls, .csv, .txt, .tsv</div>
                     </div>
                     <div id="dadata-drop-selected" class="file-meta d-none">
                       <div class="file-row">
+                        <i class="bi bi-file-earmark-excel file-icon" aria-hidden="true"></i>
                         <div class="file-info">
                           <div class="name" id="dadata-file-name"></div>
                           <div class="text-muted small" id="dadata-file-size"></div>
@@ -498,7 +556,7 @@
                 </section>
                 <div class="d-grid gap-2 mb-2">
                   <button type="button" class="btn btn-primary btn-lg" id="dadata-batch-btn" disabled>
-                    Проверить и скачать
+                    <i class="bi bi-file-earmark-arrow-down" aria-hidden="true"></i> Проверить и скачать
                   </button>
                 </div>
                 <div id="dadata-batch-progress-wrap" class="d-none mb-3" aria-live="polite">
@@ -529,14 +587,14 @@
                 <button class="nav-link active" id="fl-address-sub-single-btn" data-bs-toggle="tab"
                         data-bs-target="#fl-address-panel-single" type="button" role="tab"
                         aria-controls="fl-address-panel-single" aria-selected="true">
-                  Разовая проверка
+                  <i class="bi bi-person" aria-hidden="true"></i> Разовая проверка
                 </button>
               </li>
               <li class="nav-item" role="presentation">
                 <button class="nav-link" id="fl-address-sub-batch-btn" data-bs-toggle="tab"
                         data-bs-target="#fl-address-panel-batch" type="button" role="tab"
                         aria-controls="fl-address-panel-batch" aria-selected="false">
-                  Массовая проверка
+                  <i class="bi bi-files" aria-hidden="true"></i> Массовая проверка
                 </button>
               </li>
             </ul>
@@ -553,7 +611,7 @@
                            autocomplete="off" spellcheck="false" inputmode="numeric"
                            placeholder="12 цифр" maxlength="20" />
                     <button type="button" class="btn btn-primary" id="fl-address-check-btn">
-                      Проверить
+                      <i class="bi bi-search" aria-hidden="true"></i> Проверить
                     </button>
                   </div>
                 </section>
@@ -575,11 +633,13 @@
                     <input type="file" id="fl-address-file"
                            accept=".xlsx,.xls,.csv,.txt,.tsv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain" />
                     <div id="fl-address-drop-placeholder">
+                      <i class="bi bi-cloud-upload drop-zone-icon" aria-hidden="true"></i>
                       <div class="text-muted small">Перетащите файл сюда или нажмите для выбора</div>
                       <div class="text-muted small mt-1">.xlsx, .xls, .csv, .txt, .tsv</div>
                     </div>
                     <div id="fl-address-drop-selected" class="file-meta d-none">
                       <div class="file-row">
+                        <i class="bi bi-file-earmark-excel file-icon" aria-hidden="true"></i>
                         <div class="file-info">
                           <div class="name" id="fl-address-file-name"></div>
                           <div class="text-muted small" id="fl-address-file-size"></div>
@@ -603,7 +663,7 @@
                 </section>
                 <div class="d-grid gap-2 mb-2">
                   <button type="button" class="btn btn-primary btn-lg" id="fl-address-batch-btn" disabled>
-                    Проверить и скачать
+                    <i class="bi bi-file-earmark-arrow-down" aria-hidden="true"></i> Проверить и скачать
                   </button>
                 </div>
                 <div id="fl-address-batch-progress-wrap" class="d-none mb-3" aria-live="polite">
@@ -865,6 +925,12 @@
     };
 
     const esc = s => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const statusIcon = kind => {
+      const name = kind === 'error' || kind === 'warn' ? 'exclamation-triangle'
+        : kind === 'ok' ? 'check-circle'
+        : 'info-circle';
+      return `<i class="bi bi-${name} me-1" aria-hidden="true"></i>`;
+    };
     const getP = () => partners.find(x => x.id === selectedPartnerId);
 
     const setSteps = (active) => {
@@ -1066,21 +1132,21 @@
     const setStatus = (text, kind) => {
       if (!text) {
         statusEl.className = 'd-none';
-        statusEl.textContent = '';
+        statusEl.innerHTML = '';
         return;
       }
       const cls = kind === 'error' ? 'alert-danger'
         : kind === 'warn' ? 'alert-warning'
         : kind === 'ok' ? 'alert-success' : 'alert-info';
       statusEl.className = `alert py-2 mb-0 ${cls}`;
-      statusEl.textContent = text;
+      statusEl.innerHTML = `${statusIcon(kind)}${esc(text)}`;
     };
 
     const showResult = (show, hint = '') => {
       downloadActions.classList.toggle('d-none', !show);
       resultInfo.classList.toggle('d-none', !show);
-      if (hint) resultHint.textContent = hint;
-      else if (!show) resultHint.textContent = '';
+      if (hint) resultHint.innerHTML = `${statusIcon('ok')}${esc(hint)}`;
+      else if (!show) resultHint.innerHTML = '';
       if (show) setSteps('dl');
       else if (fileInput.files[0] && selectedPartnerId) setSteps('file');
     };
@@ -1150,9 +1216,9 @@
       }
       const ord = p.report_to_ord === true ? 'Да' : p.report_to_ord === false ? 'Нет' : '—';
       const badge = p.has_profile
-        ? '<span class="badge text-bg-success">Преобразование доступно</span>'
-        : '<span class="badge text-bg-secondary">Профиль не настроен</span>';
-      const warn = p.has_profile ? '' : '<div class="alert alert-warning py-2 px-3 mt-2 mb-0 small">Профиль не настроен. Загрузите файл выше и нажмите «Сохранить маппинг полей» — по образцу добавим маппинг.</div>';
+        ? '<span class="badge text-bg-success"><i class="bi bi-check-circle" aria-hidden="true"></i>Преобразование доступно</span>'
+        : '<span class="badge text-bg-secondary"><i class="bi bi-exclamation-triangle" aria-hidden="true"></i>Профиль не настроен</span>';
+      const warn = p.has_profile ? '' : '<div class="alert alert-warning py-2 px-3 mt-2 mb-0 small"><i class="bi bi-exclamation-triangle me-1" aria-hidden="true"></i>Профиль не настроен. Загрузите файл выше и нажмите «Сохранить маппинг полей» — по образцу добавим маппинг.</div>';
       infoEl.innerHTML = `
         <div class="info-title"><span>Данные из справочника</span>${badge}</div>
         <dl class="row mb-0 small g-1">
@@ -1477,31 +1543,31 @@
     const setMatchStatus = (text, kind) => {
       if (!text) {
         matchStatusEl.className = 'd-none';
-        matchStatusEl.textContent = '';
+        matchStatusEl.innerHTML = '';
         return;
       }
       const cls = kind === 'error' ? 'alert-danger'
         : kind === 'warn' ? 'alert-warning'
         : kind === 'ok' ? 'alert-success' : 'alert-info';
       matchStatusEl.className = `alert py-2 mb-0 ${cls}`;
-      matchStatusEl.textContent = text;
+      matchStatusEl.innerHTML = `${statusIcon(kind)}${esc(text)}`;
     };
 
     const renderMatchAttrsInfo = (status) => {
       if (!status) {
-        matchAttrsInfo.innerHTML = 'Проверка справочника договоров…';
+        matchAttrsInfo.innerHTML = `${statusIcon('info')}Проверка справочника договоров…`;
         matchAttrsInfo.className = 'alert alert-light border small mb-3';
         return;
       }
       if (status.contract_attrs_ready) {
         matchAttrsInfo.className = 'alert alert-success py-2 px-3 small mb-3';
         matchAttrsInfo.innerHTML =
-          `Справочник договоров: <strong>${esc(status.contract_attrs_filename)}</strong> `
+          `${statusIcon('ok')}Справочник договоров: <strong>${esc(status.contract_attrs_filename)}</strong> `
           + '(лист OriginalContract).';
       } else {
         matchAttrsInfo.className = 'alert alert-warning py-2 px-3 small mb-3';
         matchAttrsInfo.innerHTML =
-          'Добавьте в папку «Справка» файл атрибутов договоров '
+          `${statusIcon('warn')}Добавьте в папку «Справка» файл атрибутов договоров `
           + '(например, <strong>Договоры.xlsx</strong>) — без него метчинг недоступен.';
       }
       matchAttrsReady = !!status.contract_attrs_ready;
@@ -1511,8 +1577,8 @@
     const showMatchResult = (show, hint = '') => {
       matchDownloadActions.classList.toggle('d-none', !show);
       matchResultInfo.classList.toggle('d-none', !show);
-      if (hint) matchResultHint.textContent = hint;
-      else if (!show) matchResultHint.textContent = '';
+      if (hint) matchResultHint.innerHTML = `${statusIcon('ok')}${esc(hint)}`;
+      else if (!show) matchResultHint.innerHTML = '';
       if (show) setMatchSteps('dl');
       else if (matchFileInput.files[0]) setMatchSteps('file');
     };
@@ -1549,7 +1615,7 @@
       .then(renderMatchAttrsInfo)
       .catch(() => {
         matchAttrsInfo.className = 'alert alert-danger py-2 px-3 small mb-3';
-        matchAttrsInfo.textContent = 'Не удалось проверить справочник договоров.';
+        matchAttrsInfo.innerHTML = `${statusIcon('error')}Не удалось проверить справочник договоров.`;
         matchAttrsReady = false;
         updateMatchSubmitState();
       });

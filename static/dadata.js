@@ -28,10 +28,20 @@
     return (bytes / (1024 * 1024)).toFixed(1) + " МБ";
   };
 
+  const statusIcon = (kind) => {
+    const name =
+      kind === "error" || kind === "warn"
+        ? "exclamation-triangle"
+        : kind === "ok"
+          ? "check-circle"
+          : "info-circle";
+    return `<i class="bi bi-${name} me-1" aria-hidden="true"></i>`;
+  };
+
   const setAlert = (el, text, kind) => {
     if (!text) {
       el.className = "d-none";
-      el.textContent = "";
+      el.innerHTML = "";
       return;
     }
     const cls =
@@ -43,7 +53,7 @@
             ? "alert-success"
             : "alert-info";
     el.className = `alert py-2 mb-0 ${cls}`;
-    el.textContent = text;
+    el.innerHTML = `${statusIcon(kind)}${escapeHtml(text)}`;
   };
 
   const setStatus = (text, kind) => setAlert(statusEl, text, kind);
@@ -367,7 +377,7 @@
   const setBatchStatus = (text, kind, extraHtml = "") => {
     if (!text) {
       batchStatus.className = "d-none";
-      batchStatus.textContent = "";
+      batchStatus.innerHTML = "";
       return;
     }
     const cls =
@@ -380,8 +390,8 @@
             : "alert-info";
     batchStatus.className = `alert py-2 mb-0 ${cls}`;
     batchStatus.innerHTML = extraHtml
-      ? `${escapeHtml(text)}${extraHtml}`
-      : escapeHtml(text);
+      ? `${statusIcon(kind)}${escapeHtml(text)}${extraHtml}`
+      : `${statusIcon(kind)}${escapeHtml(text)}`;
   };
 
   const problemsHtml = (payload) => {
@@ -620,11 +630,12 @@
     dadataReady = !!configured;
     if (configured) {
       configInfo.className = "alert alert-success py-2 px-3 small mb-3";
-      configInfo.textContent = "DaData подключена. Можно проверять ИНН.";
+      configInfo.innerHTML =
+        `${statusIcon("ok")}DaData подключена. Можно проверять ИНН.`;
     } else {
       configInfo.className = "alert alert-warning py-2 px-3 small mb-3";
       configInfo.innerHTML =
-        "Ключ <code>DADATA_API_KEY</code> не задан в окружении сервера. " +
+        `${statusIcon("warn")}Ключ <code>DADATA_API_KEY</code> не задан в окружении сервера. ` +
         "Разовая и массовая проверка недоступны, пока ключ не пропишут в <code>.env</code>.";
     }
     updateSingleEnabled();
@@ -637,7 +648,7 @@
       .then((d) => applyConfig(d.dadata_configured))
       .catch(() => {
         configInfo.className = "alert alert-danger py-2 px-3 small mb-3";
-        configInfo.textContent = "Не удалось проверить статус DaData.";
+        configInfo.innerHTML = `${statusIcon("error")}Не удалось проверить статус DaData.`;
         dadataReady = false;
         updateSingleEnabled();
         updateBatchEnabled();

@@ -6,10 +6,20 @@
 
   if (!queryInput || !checkBtn) return;
 
+  const statusIcon = (kind) => {
+    const name =
+      kind === "error" || kind === "warn"
+        ? "exclamation-triangle"
+        : kind === "ok"
+          ? "check-circle"
+          : "info-circle";
+    return `<i class="bi bi-${name} me-1" aria-hidden="true"></i>`;
+  };
+
   const setStatus = (text, kind) => {
     if (!text) {
       statusEl.className = "d-none";
-      statusEl.textContent = "";
+      statusEl.innerHTML = "";
       return;
     }
     const cls =
@@ -21,7 +31,7 @@
             ? "alert-success"
             : "alert-info";
     statusEl.className = `alert py-2 mb-0 ${cls}`;
-    statusEl.textContent = text;
+    statusEl.innerHTML = `${statusIcon(kind)}${escapeHtml(text)}`;
   };
 
   const escapeHtml = (value) =>
@@ -51,7 +61,7 @@
       <div class="info-title">
         <span class="dadata-result-name">Предлагаемый адрес</span>
         <button type="button" class="btn btn-outline-secondary btn-sm" id="fl-address-copy-btn">
-          Копировать адрес
+          <i class="bi bi-clipboard" aria-hidden="true"></i> Копировать адрес
         </button>
       </div>
       <p class="fl-address-value mb-3">${escapeHtml(data.address)}</p>
@@ -67,9 +77,9 @@
     copyBtn.addEventListener("click", async () => {
       try {
         await navigator.clipboard.writeText(data.address);
-        copyBtn.textContent = "Скопировано";
+        copyBtn.innerHTML = '<i class="bi bi-check2" aria-hidden="true"></i> Скопировано';
         setTimeout(() => {
-          copyBtn.textContent = "Копировать адрес";
+          copyBtn.innerHTML = '<i class="bi bi-clipboard" aria-hidden="true"></i> Копировать адрес';
         }, 1500);
       } catch {
         setStatus("Не удалось скопировать адрес", "error");
@@ -169,7 +179,7 @@
   const setBatchStatus = (text, kind, extraHtml = "") => {
     if (!text) {
       batchStatus.className = "d-none";
-      batchStatus.textContent = "";
+      batchStatus.innerHTML = "";
       return;
     }
     const cls =
@@ -182,8 +192,8 @@
             : "alert-info";
     batchStatus.className = `alert py-2 mb-0 ${cls}`;
     batchStatus.innerHTML = extraHtml
-      ? `${escapeHtml(text)}${extraHtml}`
-      : escapeHtml(text);
+      ? `${statusIcon(kind)}${escapeHtml(text)}${extraHtml}`
+      : `${statusIcon(kind)}${escapeHtml(text)}`;
   };
 
   const problemsHtml = (payload) => {
