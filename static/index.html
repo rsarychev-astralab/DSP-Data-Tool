@@ -176,15 +176,18 @@
     }
     #progress-wrap.d-none,
     #match-progress-wrap.d-none,
-    #dadata-batch-progress-wrap.d-none { display: none !important; }
+    #dadata-batch-progress-wrap.d-none,
+    #fl-address-batch-progress-wrap.d-none { display: none !important; }
     #progress-label { color: #374151; font-weight: 600; }
     #progress-pct { color: #6b7280; }
-    #dadata-subtabs .nav-link {
+    #dadata-subtabs .nav-link,
+    #fl-address-subtabs .nav-link {
       color: #4b5563;
       font-weight: 700;
       font-size: 0.8125rem;
     }
-    #dadata-subtabs .nav-link.active {
+    #dadata-subtabs .nav-link.active,
+    #fl-address-subtabs .nav-link.active {
       background: var(--erir-header);
       color: #fff;
     }
@@ -520,22 +523,103 @@
               Адрес физлица по первым цифрам ИНН: код налоговой постановки на учёт,
               не место жительства. DaData для физлиц не используется.
             </p>
-            <section class="mb-3" aria-labelledby="lbl-fl-address-query">
-              <label for="fl-address-query" class="form-label" id="lbl-fl-address-query">
-                ИНН физлица
-              </label>
-              <div class="input-group">
-                <input type="text" class="form-control" id="fl-address-query"
-                       autocomplete="off" spellcheck="false" inputmode="numeric"
-                       placeholder="12 цифр" maxlength="20" />
-                <button type="button" class="btn btn-primary" id="fl-address-check-btn">
-                  Проверить
+
+            <ul class="nav nav-pills mb-3" id="fl-address-subtabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="fl-address-sub-single-btn" data-bs-toggle="tab"
+                        data-bs-target="#fl-address-panel-single" type="button" role="tab"
+                        aria-controls="fl-address-panel-single" aria-selected="true">
+                  Разовая проверка
                 </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="fl-address-sub-batch-btn" data-bs-toggle="tab"
+                        data-bs-target="#fl-address-panel-batch" type="button" role="tab"
+                        aria-controls="fl-address-panel-batch" aria-selected="false">
+                  Массовая проверка
+                </button>
+              </li>
+            </ul>
+
+            <div class="tab-content">
+              <div class="tab-pane fade show active" id="fl-address-panel-single" role="tabpanel"
+                   aria-labelledby="fl-address-sub-single-btn" tabindex="0">
+                <section class="mb-3" aria-labelledby="lbl-fl-address-query">
+                  <label for="fl-address-query" class="form-label" id="lbl-fl-address-query">
+                    ИНН физлица
+                  </label>
+                  <div class="input-group">
+                    <input type="text" class="form-control" id="fl-address-query"
+                           autocomplete="off" spellcheck="false" inputmode="numeric"
+                           placeholder="12 цифр" maxlength="20" />
+                    <button type="button" class="btn btn-primary" id="fl-address-check-btn">
+                      Проверить
+                    </button>
+                  </div>
+                </section>
+                <div id="fl-address-status" class="d-none" role="status"></div>
+                <div id="fl-address-result" class="info-panel alert alert-light border mt-3 d-none"
+                     aria-live="polite"></div>
               </div>
-            </section>
-            <div id="fl-address-status" class="d-none" role="status"></div>
-            <div id="fl-address-result" class="info-panel alert alert-light border mt-3 d-none"
-                 aria-live="polite"></div>
+
+              <div class="tab-pane fade" id="fl-address-panel-batch" role="tabpanel"
+                   aria-labelledby="fl-address-sub-batch-btn" tabindex="0">
+                <p class="text-muted small mb-3">
+                  Загрузите файл с колонкой <code>ИНН</code>. Остальные колонки сохранятся,
+                  адрес запишется в столбец справа от ИНН. До 50&nbsp;000 строк, файл до 10 МБ.
+                </p>
+                <section class="mb-3" aria-labelledby="lbl-fl-address-file">
+                  <span class="form-label d-block" id="lbl-fl-address-file">Файл с ИНН</span>
+                  <div class="drop-zone" id="fl-address-drop-zone" tabindex="0" role="button"
+                       aria-label="Выберите или перетащите файл с ИНН">
+                    <input type="file" id="fl-address-file"
+                           accept=".xlsx,.xls,.csv,.txt,.tsv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain" />
+                    <div id="fl-address-drop-placeholder">
+                      <div class="text-muted small">Перетащите файл сюда или нажмите для выбора</div>
+                      <div class="text-muted small mt-1">.xlsx, .xls, .csv, .txt, .tsv</div>
+                    </div>
+                    <div id="fl-address-drop-selected" class="file-meta d-none">
+                      <div class="file-row">
+                        <div class="file-info">
+                          <div class="name" id="fl-address-file-name"></div>
+                          <div class="text-muted small" id="fl-address-file-size"></div>
+                        </div>
+                        <button type="button" class="btn-close file-remove" id="fl-address-file-remove"
+                                aria-label="Удалить файл" title="Удалить файл"></button>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+                <section class="mb-3" aria-labelledby="lbl-fl-address-format">
+                  <label for="fl-address-output-format" class="form-label" id="lbl-fl-address-format">
+                    Формат результата
+                  </label>
+                  <select class="form-select" id="fl-address-output-format">
+                    <option value="auto">Как у входного файла</option>
+                    <option value="xlsx">XLSX</option>
+                    <option value="xls">XLS</option>
+                    <option value="csv">CSV</option>
+                  </select>
+                </section>
+                <div class="d-grid gap-2 mb-2">
+                  <button type="button" class="btn btn-primary btn-lg" id="fl-address-batch-btn" disabled>
+                    Проверить и скачать
+                  </button>
+                </div>
+                <div id="fl-address-batch-progress-wrap" class="d-none mb-3" aria-live="polite">
+                  <div class="d-flex justify-content-between align-items-center small mb-1">
+                    <span id="fl-address-batch-progress-label">Проверка…</span>
+                    <span id="fl-address-batch-progress-pct"></span>
+                  </div>
+                  <div class="progress" style="height: 10px;">
+                    <div id="fl-address-batch-progress-bar" class="progress-bar progress-bar-striped"
+                         role="progressbar" style="width: 0%" aria-valuenow="0"
+                         aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                </div>
+                <div id="fl-address-batch-status" class="d-none mt-3" role="status"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>

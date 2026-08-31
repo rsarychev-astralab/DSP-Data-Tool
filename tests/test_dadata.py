@@ -15,6 +15,7 @@ from app.dadata.core import (
     parse_xlsx,
     party_to_row,
     unique_inns,
+    batch_row_counts,
 )
 
 
@@ -133,6 +134,20 @@ def test_party_to_row_found_and_missing():
     assert row["type"] == "ЮЛ"
     assert row["name_short"] == "ПАО Сбербанк"
     assert row["address"] == "Москва"
+
+
+def test_batch_row_counts():
+    rows = [
+        party_to_row("7707083893", None, error="лимит"),
+        party_to_row("500100732259", None),
+        {
+            "inn": "7707083893",
+            "status": "найдено",
+            "error": "",
+        },
+    ]
+    counts = batch_row_counts(rows)
+    assert counts == {"found": 1, "errors": 1, "not_found": 1}
 
 
 def test_build_result_file_xlsx_and_csv():

@@ -449,10 +449,15 @@
     if (payload.status === "completed") {
       stopPolling();
       await downloadJobResult(jobId, outputFormat.value);
+      hideProgress();
+      const extras = [];
+      if (payload.errors) extras.push(`ошибок: ${payload.errors}`);
+      if (payload.not_found) extras.push(`не найдено: ${payload.not_found}`);
+      const counts = extras.length ? ` (${extras.join(", ")})` : "";
       const suffix = payload.message ? ` ${payload.message}` : "";
       setBatchStatus(
-        `Готово: обработано ${payload.processed} из ${payload.total}. Файл скачан.${suffix}`,
-        payload.message ? "warn" : "ok"
+        `Готово: обработано ${payload.processed} из ${payload.total}. Файл скачан.${counts}${suffix}`,
+        payload.errors || payload.not_found || payload.message ? "warn" : "ok"
       );
       updateBatchEnabled();
       return;

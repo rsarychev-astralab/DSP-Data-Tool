@@ -275,6 +275,21 @@ def party_to_row(inn: str, party: dict | None, error: str = "") -> dict[str, str
     }
 
 
+def batch_row_counts(rows: list[dict[str, str]]) -> dict[str, int]:
+    found = 0
+    errors = 0
+    not_found = 0
+    for row in rows:
+        status = row.get("status") or ""
+        if row.get("error") or status == "ошибка":
+            errors += 1
+        elif status == "не найдено":
+            not_found += 1
+        elif status == "найдено":
+            found += 1
+    return {"found": found, "errors": errors, "not_found": not_found}
+
+
 def rows_to_csv(rows: list[dict[str, str]]) -> bytes:
     buffer = io.StringIO()
     writer = csv.DictWriter(
