@@ -149,6 +149,7 @@
     .dadata-suggestion-meta { display: block; font-size: 0.75rem; color: #6b7280; }
     .dadata-result-name { font-size: 1.05rem; font-weight: 700; color: var(--erir-header); }
     .dadata-result-full { font-size: 0.8125rem; color: #6b7280; }
+    .fl-address-value { font-size: 1.05rem; font-weight: 700; color: var(--erir-header); }
   </style>
 </head>
 <body class="d-flex flex-column">
@@ -167,21 +168,28 @@
             <button class="nav-link active" id="tab-upload-btn" data-bs-toggle="tab"
                     data-bs-target="#tab-upload" type="button" role="tab"
                     aria-controls="tab-upload" aria-selected="true">
-              Загрузка и преобразование
+              Преобразование выгрузки
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="tab-matching-btn" data-bs-toggle="tab"
                     data-bs-target="#tab-matching" type="button" role="tab"
                     aria-controls="tab-matching" aria-selected="false">
-              Метчинг договоров
+              Сопоставление договоров
             </button>
           </li>
           <li class="nav-item" role="presentation">
             <button class="nav-link" id="tab-dadata-btn" data-bs-toggle="tab"
                     data-bs-target="#tab-dadata" type="button" role="tab"
                     aria-controls="tab-dadata" aria-selected="false">
-              Проверка юр лиц в Dadata
+              Проверка юридических лиц
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-fl-address-btn" data-bs-toggle="tab"
+                    data-bs-target="#tab-fl-address" type="button" role="tab"
+                    aria-controls="tab-fl-address" aria-selected="false">
+              Адрес физического лица
             </button>
           </li>
         </ul>
@@ -309,7 +317,7 @@
                    aria-label="Выберите файл результата преобразования">
                 <input type="file" id="match-file" accept=".xlsx,.xlsm,.xls" />
                 <div id="match-drop-placeholder">
-                  <div class="text-muted small">Файл с вкладки «Загрузка и преобразование»</div>
+                  <div class="text-muted small">Файл с вкладки «Преобразование выгрузки»</div>
                   <div class="text-muted small mt-1">.xlsx / .xlsm — шаблон загрузки DSP</div>
                 </div>
                 <div id="match-drop-selected" class="file-meta d-none">
@@ -461,6 +469,30 @@
                 <div id="dadata-batch-status" class="d-none mt-3" role="status"></div>
               </div>
             </div>
+          </div>
+
+          <div class="tab-pane fade" id="tab-fl-address" role="tabpanel"
+               aria-labelledby="tab-fl-address-btn" tabindex="0">
+            <p class="text-muted small mb-3">
+              Адрес физлица по первым цифрам ИНН: код налоговой постановки на учёт,
+              не место жительства. DaData для физлиц не используется.
+            </p>
+            <section class="mb-3" aria-labelledby="lbl-fl-address-query">
+              <label for="fl-address-query" class="form-label" id="lbl-fl-address-query">
+                ИНН физлица
+              </label>
+              <div class="input-group">
+                <input type="text" class="form-control" id="fl-address-query"
+                       autocomplete="off" spellcheck="false" inputmode="numeric"
+                       placeholder="12 цифр" maxlength="20" />
+                <button type="button" class="btn btn-primary" id="fl-address-check-btn">
+                  Проверить
+                </button>
+              </div>
+            </section>
+            <div id="fl-address-status" class="d-none" role="status"></div>
+            <div id="fl-address-result" class="info-panel alert alert-light border mt-3 d-none"
+                 aria-live="polite"></div>
           </div>
         </div>
       </div>
@@ -1552,5 +1584,6 @@
     }).catch(e => setStatus('Ошибка загрузки списка DSP: ' + e.message, 'error'));
   </script>
   <script src="/static/dadata.js"></script>
+  <script src="/static/fl-address.js"></script>
 </body>
 </html>
