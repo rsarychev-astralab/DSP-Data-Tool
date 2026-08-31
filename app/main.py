@@ -20,7 +20,7 @@ from app.matching.match import match_workbook_bytes, resolve_contract_attrs_path
 from app.validation.remarks import build_remarks_filename, build_validation_remarks_bytes
 from app.validation.validate import validate_records, validate_workbook_bytes
 
-app = FastAPI(title="DSP Transform", version="0.1.0")
+app = FastAPI(title="DSP Data Tool", version="0.1.0")
 app.include_router(dadata_router)
 app.include_router(fl_address_router)
 
@@ -39,7 +39,7 @@ if STATIC_DIR.exists():
 def index():
     index_path = STATIC_DIR / "index.html"
     if not index_path.exists():
-        return HTMLResponse("<h1>DSP Transform</h1><p>static/index.html not found</p>")
+        return HTMLResponse("<h1>DSP Data Tool</h1><p>static/index.html not found</p>")
     return HTMLResponse(index_path.read_text(encoding="utf-8"))
 
 

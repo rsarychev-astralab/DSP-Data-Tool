@@ -1,7 +1,7 @@
 # https://render.com — бесплатный Web Service (засыпает без трафика ~15 мин)
 services:
   - type: web
-    name: dsp-transform
+    name: dsp-data-tool
     runtime: python
     plan: free
     buildCommand: pip install -r requirements.txt
