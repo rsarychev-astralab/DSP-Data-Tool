@@ -24,7 +24,7 @@
       border-bottom: 3px solid #0f2d4a;
     }
     .app-header .subtitle { font-size: 0.8125rem; opacity: 0.85; }
-    main { max-width: 44rem; }
+    main { max-width: 48rem; }
     .card { border: 1px solid #d4dbe5; box-shadow: 0 1px 3px rgba(15, 45, 74, 0.08); }
     .card-header { background: #f8fafc; font-weight: 700; color: var(--erir-header); }
     .form-label { font-weight: 700; color: #374151; font-size: 0.875rem; }
@@ -106,7 +106,8 @@
       color: #991b1b;
     }
     #progress-wrap.d-none,
-    #match-progress-wrap.d-none { display: none !important; }
+    #match-progress-wrap.d-none,
+    #dadata-batch-progress-wrap.d-none { display: none !important; }
     #progress-label { color: #374151; font-weight: 600; }
     #progress-pct { color: #6b7280; }
     .card-header-tabs {
@@ -134,6 +135,20 @@
       background: transparent;
       border-bottom-color: var(--erir-header);
     }
+    #dadata-subtabs .nav-link {
+      color: #4b5563;
+      font-weight: 700;
+      font-size: 0.8125rem;
+    }
+    #dadata-subtabs .nav-link.active {
+      background: var(--erir-header);
+      color: #fff;
+    }
+    .dadata-search { position: relative; }
+    .dadata-suggestion-title { display: block; }
+    .dadata-suggestion-meta { display: block; font-size: 0.75rem; color: #6b7280; }
+    .dadata-result-name { font-size: 1.05rem; font-weight: 700; color: var(--erir-header); }
+    .dadata-result-full { font-size: 0.8125rem; color: #6b7280; }
   </style>
 </head>
 <body class="d-flex flex-column">
@@ -160,6 +175,13 @@
                     data-bs-target="#tab-matching" type="button" role="tab"
                     aria-controls="tab-matching" aria-selected="false">
               Метчинг договоров
+            </button>
+          </li>
+          <li class="nav-item" role="presentation">
+            <button class="nav-link" id="tab-dadata-btn" data-bs-toggle="tab"
+                    data-bs-target="#tab-dadata" type="button" role="tab"
+                    aria-controls="tab-dadata" aria-selected="false">
+              Проверка юр лиц в Dadata
             </button>
           </li>
         </ul>
@@ -331,6 +353,114 @@
             </div>
 
             <div id="match-status" class="d-none mt-3" role="status"></div>
+          </div>
+
+          <div class="tab-pane fade" id="tab-dadata" role="tabpanel"
+               aria-labelledby="tab-dadata-btn" tabindex="0">
+            <p class="text-muted small mb-3">
+              Проверка юридических лиц и ИП по ИНН через DaData: разовая карточка или массовая
+              выгрузка из файла. Ключ API остаётся на сервере.
+            </p>
+            <div id="dadata-config-info" class="alert alert-light border small mb-3" role="status">
+              Проверка ключа DaData…
+            </div>
+
+            <ul class="nav nav-pills mb-3" id="dadata-subtabs" role="tablist">
+              <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="dadata-sub-single-btn" data-bs-toggle="tab"
+                        data-bs-target="#dadata-panel-single" type="button" role="tab"
+                        aria-controls="dadata-panel-single" aria-selected="true">
+                  Разовая проверка
+                </button>
+              </li>
+              <li class="nav-item" role="presentation">
+                <button class="nav-link" id="dadata-sub-batch-btn" data-bs-toggle="tab"
+                        data-bs-target="#dadata-panel-batch" type="button" role="tab"
+                        aria-controls="dadata-panel-batch" aria-selected="false">
+                  Массовая проверка
+                </button>
+              </li>
+            </ul>
+
+            <div class="tab-content">
+              <div class="tab-pane fade show active" id="dadata-panel-single" role="tabpanel"
+                   aria-labelledby="dadata-sub-single-btn" tabindex="0">
+                <section class="mb-3" aria-labelledby="lbl-dadata-query">
+                  <label for="dadata-query" class="form-label" id="lbl-dadata-query">ИНН или название</label>
+                  <div class="dadata-search">
+                    <div class="input-group">
+                      <input type="text" class="form-control" id="dadata-query" autocomplete="off"
+                             spellcheck="false" placeholder="7707083893 или Сбербанк"
+                             aria-autocomplete="list" aria-controls="dadata-suggestions"
+                             aria-expanded="false" />
+                      <button type="button" class="btn btn-primary" id="dadata-check-btn">Проверить</button>
+                    </div>
+                    <ul id="dadata-suggestions" class="dropdown-menu combobox-list w-100 shadow-sm" hidden></ul>
+                  </div>
+                </section>
+                <div id="dadata-status" class="d-none" role="status"></div>
+                <div id="dadata-result" class="info-panel alert alert-light border mt-3 d-none"
+                     aria-live="polite"></div>
+              </div>
+
+              <div class="tab-pane fade" id="dadata-panel-batch" role="tabpanel"
+                   aria-labelledby="dadata-sub-batch-btn" tabindex="0">
+                <p class="text-muted small mb-3">
+                  Загрузите <code>XLSX</code> / <code>XLS</code> / CSV / TXT с ИНН
+                  (колонка <code>ИНН</code> или список). До 2000 уникальных ИНН, файл до 5 МБ.
+                </p>
+                <section class="mb-3" aria-labelledby="lbl-dadata-file">
+                  <span class="form-label d-block" id="lbl-dadata-file">Файл с ИНН</span>
+                  <div class="drop-zone" id="dadata-drop-zone" tabindex="0" role="button"
+                       aria-label="Выберите или перетащите файл с ИНН">
+                    <input type="file" id="dadata-file"
+                           accept=".xlsx,.xls,.csv,.txt,.tsv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain" />
+                    <div id="dadata-drop-placeholder">
+                      <div class="text-muted small">Перетащите файл сюда или нажмите для выбора</div>
+                      <div class="text-muted small mt-1">.xlsx, .xls, .csv, .txt, .tsv</div>
+                    </div>
+                    <div id="dadata-drop-selected" class="file-meta d-none">
+                      <div class="file-row">
+                        <div class="file-info">
+                          <div class="name" id="dadata-file-name"></div>
+                          <div class="text-muted small" id="dadata-file-size"></div>
+                        </div>
+                        <button type="button" class="btn-close file-remove" id="dadata-file-remove"
+                                aria-label="Удалить файл" title="Удалить файл"></button>
+                      </div>
+                    </div>
+                  </div>
+                </section>
+                <section class="mb-3" aria-labelledby="lbl-dadata-format">
+                  <label for="dadata-output-format" class="form-label" id="lbl-dadata-format">
+                    Формат результата
+                  </label>
+                  <select class="form-select" id="dadata-output-format">
+                    <option value="auto">Как у входного файла</option>
+                    <option value="xlsx">XLSX</option>
+                    <option value="xls">XLS</option>
+                    <option value="csv">CSV</option>
+                  </select>
+                </section>
+                <div class="d-grid gap-2 mb-2">
+                  <button type="button" class="btn btn-primary btn-lg" id="dadata-batch-btn" disabled>
+                    Проверить и скачать
+                  </button>
+                </div>
+                <div id="dadata-batch-progress-wrap" class="d-none mb-3" aria-live="polite">
+                  <div class="d-flex justify-content-between align-items-center small mb-1">
+                    <span id="dadata-batch-progress-label">Проверка…</span>
+                    <span id="dadata-batch-progress-pct"></span>
+                  </div>
+                  <div class="progress" style="height: 10px;">
+                    <div id="dadata-batch-progress-bar" class="progress-bar progress-bar-striped"
+                         role="progressbar" style="width: 0%" aria-valuenow="0"
+                         aria-valuemin="0" aria-valuemax="100"></div>
+                  </div>
+                </div>
+                <div id="dadata-batch-status" class="d-none mt-3" role="status"></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1421,5 +1551,6 @@
       setSteps('dsp');
     }).catch(e => setStatus('Ошибка загрузки списка DSP: ' + e.message, 'error'));
   </script>
+  <script src="/static/dadata.js"></script>
 </body>
 </html>

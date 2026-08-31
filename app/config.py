@@ -1,6 +1,10 @@
 from pathlib import Path
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 ROOT = Path(__file__).resolve().parents[1]
 PROFILES_DIR = Path(__file__).resolve().parent / "profiles"
 STATIC_DIR = ROOT / "static"
@@ -39,3 +43,11 @@ def resolve_contract_attrs_path() -> Path | None:
         if path.exists():
             return path
     return None
+
+
+def dadata_api_key() -> str:
+    return os.environ.get("DADATA_API_KEY", "").strip()
+
+
+def dadata_configured() -> bool:
+    return bool(dadata_api_key())

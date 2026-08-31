@@ -8,7 +8,8 @@ from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 
 from app.catalog import get_catalog_entry, get_catalog_warnings, load_dsp_catalog
-from app.config import SPRAVKA_DSP_PATH, STATIC_DIR, TEMPLATE_PATH
+from app.config import SPRAVKA_DSP_PATH, STATIC_DIR, TEMPLATE_PATH, dadata_configured
+from app.dadata import router as dadata_router
 from app.engine.transform import transform_source
 from app.http_utils import encode_validation_errors, encode_validation_rows
 from app.profiles.loader import has_transform_profile, load_profile
@@ -19,6 +20,7 @@ from app.validation.remarks import build_remarks_filename, build_validation_rema
 from app.validation.validate import validate_records, validate_workbook_bytes
 
 app = FastAPI(title="DSP Transform", version="0.1.0")
+app.include_router(dadata_router)
 
 
 def _content_disposition(filename: str) -> str:
@@ -313,4 +315,5 @@ def health():
         "template_ok": TEMPLATE_PATH.exists(),
         "spravka_ok": SPRAVKA_DSP_PATH.exists(),
         "contract_attrs_ok": attrs_path is not None,
+        "dadata_configured": dadata_configured(),
     }
