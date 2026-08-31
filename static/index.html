@@ -340,12 +340,10 @@
           <div class="tab-pane fade" id="tab-matching" role="tabpanel"
                aria-labelledby="tab-matching-btn" tabindex="0">
             <p class="text-muted small mb-3">
-              Сначала преобразуйте выгрузку на соседней вкладке, затем загрузите <strong>тот же файл
-              результата</strong> (шаблон загрузки DSP, 21 колонка). Метчинг <strong>по договору</strong>:
-              номер, дата, тип и предмет договора, ИНН заказчика и исполнителя. В базе у номера часто суффикс
-              « - 1234» (внутренний id) — при метче он отбрасывается. На выходе — ERID
-              и ID в OTM, OZON, VK. В файле два листа: <strong>ID</strong> (краткий) и
-              <strong>Выгрузка с ID</strong> (основные поля договора/сторон + ID).
+              Сначала преобразуйте выгрузку на соседней вкладке, затем загрузите тот же файл результата.
+              Метчинг по договору: номер, дата, тип и предмет договора, ИНН заказчика и исполнителя.
+              На выходе — ERID и ID в OTM, OZON, VK. В файле два листа: ID (краткий) и Выгрузка с ID
+              (основные поля договора/сторон + ID).
             </p>
 
             <div id="match-attrs-info" class="alert alert-light border small mb-3" role="status"></div>
@@ -412,7 +410,7 @@
                aria-labelledby="tab-dadata-btn" tabindex="0">
             <p class="text-muted small mb-3">
               Проверка юридических лиц и ИП по ИНН через DaData: разовая карточка или массовая
-              выгрузка из файла. Ключ API остаётся на сервере.
+              выгрузка из файла.
             </p>
             <div id="dadata-config-info" class="alert alert-light border small mb-3" role="status">
               Проверка ключа DaData…
