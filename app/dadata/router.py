@@ -14,6 +14,7 @@ from app.dadata.core import (
     JOB_TTL_SEC,
     MAX_UPLOAD_BYTES,
     batch_row_counts,
+    batch_problems,
     build_result_file,
     default_output_format,
     inn_checksum_ok,
@@ -165,6 +166,7 @@ async def batch_status(job_id: str):
         raise HTTPException(status_code=404, detail="Задача не найдена или устарела")
 
     counts = batch_row_counts(job.rows) if job.status == "completed" else {}
+    problems = batch_problems(job.rows) if job.status == "completed" else {"items": [], "total": 0}
     return {
         "job_id": job.id,
         "status": job.status,
@@ -173,6 +175,7 @@ async def batch_status(job_id: str):
         "found": counts.get("found", 0),
         "errors": counts.get("errors", 0),
         "not_found": counts.get("not_found", 0),
+        "problems": problems,
         "error": job.error,
         "message": job.message,
         "download_ready": job.status == "completed" and bool(job.rows),

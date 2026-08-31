@@ -290,6 +290,30 @@ def batch_row_counts(rows: list[dict[str, str]]) -> dict[str, int]:
     return {"found": found, "errors": errors, "not_found": not_found}
 
 
+MAX_PROBLEMS_IN_STATUS = 100
+
+
+def batch_problems(rows: list[dict[str, str]]) -> dict:
+    items: list[dict[str, str | int]] = []
+    for index, row in enumerate(rows):
+        status = row.get("status") or ""
+        error = (row.get("error") or "").strip()
+        if error or status == "ошибка":
+            reason = error or "ошибка"
+        elif status == "не найдено":
+            reason = "Организация не найдена"
+        else:
+            continue
+        items.append(
+            {
+                "row": index + 2,
+                "inn": row.get("inn") or "",
+                "error": reason,
+            }
+        )
+    return {"items": items[:MAX_PROBLEMS_IN_STATUS], "total": len(items)}
+
+
 def rows_to_csv(rows: list[dict[str, str]]) -> bytes:
     buffer = io.StringIO()
     writer = csv.DictWriter(

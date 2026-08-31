@@ -364,7 +364,47 @@
 
   let pollTimer = null;
 
-  const setBatchStatus = (text, kind) => setAlert(batchStatus, text, kind);
+  const setBatchStatus = (text, kind, extraHtml = "") => {
+    if (!text) {
+      batchStatus.className = "d-none";
+      batchStatus.textContent = "";
+      return;
+    }
+    const cls =
+      kind === "error"
+        ? "alert-danger"
+        : kind === "warn"
+          ? "alert-warning"
+          : kind === "ok"
+            ? "alert-success"
+            : "alert-info";
+    batchStatus.className = `alert py-2 mb-0 ${cls}`;
+    batchStatus.innerHTML = extraHtml
+      ? `${escapeHtml(text)}${extraHtml}`
+      : escapeHtml(text);
+  };
+
+  const problemsHtml = (payload) => {
+    const items = Array.isArray(payload?.items) ? payload.items : [];
+    if (!items.length) return "";
+    const total = Number(payload.total) || items.length;
+    const rows = items
+      .map((item) => {
+        const inn = item.inn
+          ? `, ИНН <span class="font-monospace">${escapeHtml(item.inn)}</span>`
+          : "";
+        return `<li>строка ${escapeHtml(String(item.row))}${inn}: ${escapeHtml(item.error || "")}</li>`;
+      })
+      .join("");
+    const more =
+      total > items.length
+        ? `<li class="text-muted">и ещё ${total - items.length}</li>`
+        : "";
+    return (
+      `<p class="small fw-semibold mt-2 mb-1">Проблемы (${total}):</p>` +
+      `<ul class="validation-list mb-0 ps-3">${rows}${more}</ul>`
+    );
+  };
 
   const setProgress = (processed, total) => {
     const safeTotal = total || 0;
@@ -457,7 +497,8 @@
       const suffix = payload.message ? ` ${payload.message}` : "";
       setBatchStatus(
         `Готово: обработано ${payload.processed} из ${payload.total}. Файл скачан.${counts}${suffix}`,
-        payload.errors || payload.not_found || payload.message ? "warn" : "ok"
+        payload.errors || payload.not_found || payload.message ? "warn" : "ok",
+        problemsHtml(payload.problems)
       );
       updateBatchEnabled();
       return;

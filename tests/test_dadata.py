@@ -16,6 +16,7 @@ from app.dadata.core import (
     party_to_row,
     unique_inns,
     batch_row_counts,
+    batch_problems,
 )
 
 
@@ -148,6 +149,17 @@ def test_batch_row_counts():
     ]
     counts = batch_row_counts(rows)
     assert counts == {"found": 1, "errors": 1, "not_found": 1}
+
+    problems = batch_problems(rows)
+    assert problems["total"] == 2
+    assert problems["items"][0] == {
+        "row": 2,
+        "inn": "7707083893",
+        "error": "лимит",
+    }
+    assert problems["items"][1]["inn"] == "500100732259"
+    assert problems["items"][1]["error"] == "Организация не найдена"
+    assert problems["items"][1]["row"] == 3
 
 
 def test_build_result_file_xlsx_and_csv():
