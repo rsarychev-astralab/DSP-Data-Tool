@@ -4,6 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>DSP Data Tool</title>
+  <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=PT+Sans:wght@400;700&display=swap" rel="stylesheet">
@@ -24,7 +25,35 @@
       background: linear-gradient(180deg, var(--erir-header) 0%, #1a4a7a 100%);
       border-bottom: 3px solid #0f2d4a;
     }
+    .app-header-inner {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 1rem;
+      width: 100%;
+    }
     .app-header .subtitle { font-size: 0.8125rem; opacity: 0.85; }
+    .app-health {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: flex-end;
+      gap: 0.35rem 0.85rem;
+      font-size: 0.75rem;
+      color: rgba(255, 255, 255, 0.78);
+      padding-top: 0.2rem;
+    }
+    .app-health[hidden] { display: none; }
+    .app-health .ok { color: #bbf7d0; }
+    .app-health .bad { color: #fecaca; }
+    .app-health i.bi { margin-right: 0.2rem; }
+    .app-footer {
+      border-top: 1px solid #d4dbe5;
+      background: #fff;
+      color: #6b7280;
+      font-size: 0.75rem;
+      padding: 0.65rem 0;
+    }
     i.bi { vertical-align: -0.125em; }
     .app-header .navbar-brand i.bi {
       font-size: 1.25rem;
@@ -112,33 +141,100 @@
       }
       .app-main { flex: 1; }
     }
-    .card { border: 1px solid #d4dbe5; box-shadow: 0 1px 3px rgba(15, 45, 74, 0.08); }
-    .card-header { background: #f8fafc; font-weight: 700; color: var(--erir-header); }
-    .form-label { font-weight: 700; color: #374151; font-size: 0.875rem; }
-    .steps {
+    .card { border: 1px solid #d4dbe5; box-shadow: 0 1px 3px rgba(15, 45, 74, 0.08); overflow: hidden; }
+    .card-header {
+      background: #f8fafc;
+      font-weight: 700;
+      color: var(--erir-header);
+      border-bottom: 1px solid #d4dbe5;
+    }
+    .card-head-title {
       display: flex;
-      gap: 0.35rem;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 1rem;
+    }
+    .card-head-lead {
+      font-weight: 400;
+      font-size: 0.8125rem;
+      color: #6b7280;
+      margin-top: 0.3rem;
+    }
+    .card-footer {
+      background: #f8fafc;
+      border-top: 1px solid #d4dbe5;
+    }
+    .form-actions {
+      display: flex;
       flex-wrap: wrap;
+      gap: 0.5rem;
+      align-items: center;
+    }
+    .form-actions .btn { flex: 0 0 auto; }
+    @media (max-width: 767.98px) {
+      .form-actions .btn { flex: 1 1 12rem; }
+    }
+    .form-label { font-weight: 700; color: #374151; font-size: 0.875rem; }
+    .input-group-text { background: #f8fafc; color: #6b7280; }
+    .steps {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.65rem 0.5rem;
       margin-bottom: 1.25rem;
     }
     .step {
+      position: relative;
       display: flex;
+      flex-direction: column;
       align-items: center;
-      justify-content: center;
       gap: 0.3rem;
-      flex: 1 1 auto;
-      min-width: 4.5rem;
+      min-width: 0;
       text-align: center;
       font-size: 0.75rem;
       color: #6b7280;
-      padding: 0.35rem 0.5rem;
-      border-radius: var(--bs-border-radius);
-      background: #f1f5f9;
-      border: 1px solid #e2e8f0;
+      background: none;
+      border: none;
+      padding: 0;
     }
-    .step i.bi { font-size: 0.85rem; }
-    .step.active { background: #e8f0f8; color: var(--erir-header); border-color: #b8cfe8; font-weight: 700; }
-    .step.done { background: #ecfdf5; color: #166534; border-color: #bbf7d0; }
+    .step-dot {
+      width: 1.65rem;
+      height: 1.65rem;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #f1f5f9;
+      border: 1px solid #d4dbe5;
+      z-index: 1;
+    }
+    .step-dot i.bi { font-size: 0.8rem; margin: 0; }
+    .step.active { color: var(--erir-header); font-weight: 700; }
+    .step.active .step-dot { background: #e8f0f8; border-color: var(--erir-header); color: var(--erir-header); }
+    .step.done { color: #166534; }
+    .step.done .step-dot { background: #ecfdf5; border-color: #86efac; color: #166534; }
+    @media (max-width: 767.98px) {
+      .steps-match { grid-template-columns: 1fr 1fr 1fr; }
+    }
+    @media (min-width: 768px) {
+      .steps {
+        display: flex;
+        flex-wrap: nowrap;
+        align-items: flex-start;
+      }
+      .step { flex: 1 1 0; }
+      .step:not(:last-child)::after {
+        content: "";
+        position: absolute;
+        top: 0.8rem;
+        left: calc(50% + 1rem);
+        width: calc(100% - 2rem);
+        height: 2px;
+        background: #d4dbe5;
+        z-index: 0;
+      }
+      .step.done:not(:last-child)::after { background: #86efac; }
+      .step.active:not(:last-child)::after { background: #b8cfe8; }
+    }
     .combobox-list { max-height: 14rem; overflow-y: auto; }
     .combobox-list .dropdown-item.active,
     .combobox-list .dropdown-item:hover { background: #e8f0f8; color: #153d66; }
@@ -156,8 +252,8 @@
     .drop-zone {
       border: 2px dashed #c5cdd8;
       border-radius: var(--bs-border-radius);
-      padding: 1.25rem 1rem;
-      text-align: center;
+      padding: 0.7rem 0.85rem;
+      text-align: left;
       background: #fafbfc;
       cursor: pointer;
       transition: border-color 0.15s, background 0.15s;
@@ -166,16 +262,25 @@
       border-color: var(--bs-primary);
       background: #f0f6fc;
     }
+    .drop-placeholder {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+    }
     .drop-zone-icon {
-      font-size: 1.75rem;
+      font-size: 1.35rem;
       color: #94a3b8;
-      display: block;
-      margin-bottom: 0.35rem;
+      flex-shrink: 0;
       transition: color 0.15s;
     }
     .drop-zone:hover .drop-zone-icon,
     .drop-zone.dragover .drop-zone-icon { color: var(--bs-primary); }
-    .drop-zone.has-file { border-style: solid; border-color: #94b8d9; background: #fff; text-align: left; }
+    .drop-zone.has-file {
+      border-style: solid;
+      border-color: #94b8d9;
+      background: #fff;
+      padding: 0.5rem 0.75rem;
+    }
     .file-row .file-icon {
       flex-shrink: 0;
       font-size: 1.25rem;
@@ -241,9 +346,12 @@
 </head>
 <body class="d-flex flex-column">
   <header class="app-header navbar navbar-dark py-3">
-    <div class="app-shell-inner w-100">
-      <span class="navbar-brand mb-0 h1 fs-5"><i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i>DSP Data Tool</span>
-      <div class="subtitle text-white-50 mt-1">Выгрузка партнёра → шаблон загрузки</div>
+    <div class="app-shell-inner app-header-inner">
+      <div>
+        <span class="navbar-brand mb-0 h1 fs-5"><i class="bi bi-file-earmark-spreadsheet" aria-hidden="true"></i>DSP Data Tool</span>
+        <div class="subtitle text-white-50 mt-1">Выгрузка партнёра → шаблон загрузки</div>
+      </div>
+      <div id="app-health" class="app-health" hidden></div>
     </div>
   </header>
 
@@ -286,22 +394,44 @@
     </nav>
     <main class="app-main">
     <div class="card">
-      <div class="card-body">
         <div class="tab-content" id="main-tabs-content">
           <div class="tab-pane fade show active" id="tab-upload" role="tabpanel"
                aria-labelledby="tab-upload-btn" tabindex="0">
+        <div class="card-header">
+          <div class="card-head-title">
+            <i class="bi bi-arrow-left-right" aria-hidden="true"></i>
+            Преобразование выгрузки
+          </div>
+          <div class="card-head-lead">Выгрузка партнёра в шаблон загрузки реестра.</div>
+        </div>
+        <div class="card-body">
         <nav class="steps" aria-label="Шаги">
-          <div class="step active" id="step-dsp"><i class="bi bi-buildings" aria-hidden="true"></i>1. DSP</div>
-          <div class="step" id="step-file"><i class="bi bi-file-earmark" aria-hidden="true"></i>2. Файл</div>
-          <div class="step" id="step-run"><i class="bi bi-gear" aria-hidden="true"></i>3. Обработка</div>
-          <div class="step" id="step-dl"><i class="bi bi-download" aria-hidden="true"></i>4. Скачать</div>
+          <div class="step active" id="step-dsp">
+            <span class="step-dot"><i class="bi bi-buildings" aria-hidden="true"></i></span>
+            <span class="step-label">1. DSP</span>
+          </div>
+          <div class="step" id="step-file">
+            <span class="step-dot"><i class="bi bi-file-earmark" aria-hidden="true"></i></span>
+            <span class="step-label">2. Файл</span>
+          </div>
+          <div class="step" id="step-run">
+            <span class="step-dot"><i class="bi bi-gear" aria-hidden="true"></i></span>
+            <span class="step-label">3. Обработка</span>
+          </div>
+          <div class="step" id="step-dl">
+            <span class="step-dot"><i class="bi bi-download" aria-hidden="true"></i></span>
+            <span class="step-label">4. Скачать</span>
+          </div>
         </nav>
 
         <section class="mb-3" aria-labelledby="lbl-dsp">
           <label for="partner-search" class="form-label" id="lbl-dsp">DSP</label>
           <div class="combobox position-relative">
-            <input type="text" class="form-control" id="partner-search" autocomplete="off"
-                   placeholder="Начните вводить название…" />
+            <div class="input-group">
+              <span class="input-group-text"><i class="bi bi-search" aria-hidden="true"></i></span>
+              <input type="text" class="form-control" id="partner-search" autocomplete="off"
+                     placeholder="Начните вводить название…" />
+            </div>
             <ul id="partner-list" class="dropdown-menu combobox-list w-100 shadow-sm" hidden></ul>
           </div>
         </section>
@@ -328,10 +458,12 @@
           <div class="drop-zone" id="drop-zone" tabindex="0" role="button"
                aria-label="Выберите или перетащите файл Excel">
             <input type="file" id="file" accept=".xlsx,.xlsm,.xls" />
-            <div id="drop-placeholder">
+            <div id="drop-placeholder" class="drop-placeholder">
               <i class="bi bi-cloud-upload drop-zone-icon" aria-hidden="true"></i>
-              <div class="text-muted small">Перетащите файл сюда или нажмите для выбора</div>
-              <div class="text-muted small mt-1">Формат: .xlsx, .xlsm, .xls</div>
+              <div>
+                <div class="text-muted small">Перетащите файл сюда или нажмите для выбора</div>
+                <div class="text-muted small">Формат: .xlsx, .xlsm, .xls</div>
+              </div>
             </div>
             <div id="drop-selected" class="file-meta d-none">
               <div class="file-row">
@@ -347,16 +479,6 @@
           </div>
         </section>
 
-        <div class="d-grid gap-2 mb-2">
-          <button type="button" class="btn btn-primary btn-lg" id="submit" disabled>
-            <i class="bi bi-play-fill" aria-hidden="true"></i> Преобразовать
-          </button>
-          <button type="button" class="btn btn-outline-secondary" id="save-sample" disabled>
-            <i class="bi bi-bookmark" aria-hidden="true"></i> Сохранить маппинг полей
-          </button>
-        </div>
-        <p class="form-text mb-0" id="sample-name-preview"></p>
-
         <div id="progress-wrap" class="d-none mb-3" aria-live="polite">
           <div class="d-flex justify-content-between align-items-center small mb-1">
             <span id="progress-label">Загрузка…</span>
@@ -366,15 +488,6 @@
             <div id="progress-bar" class="progress-bar progress-bar-striped" role="progressbar"
                  style="width: 0%" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
           </div>
-        </div>
-
-        <div id="download-actions" class="d-grid gap-2 mb-3 d-none" aria-live="polite">
-          <button type="button" class="btn btn-success btn-lg" id="download">
-            <i class="bi bi-download" aria-hidden="true"></i> Скачать файл
-          </button>
-          <button type="button" class="btn btn-outline-warning d-none" id="download-remarks">
-            <i class="bi bi-exclamation-triangle" aria-hidden="true"></i> Скачать файл замечаний
-          </button>
         </div>
 
         <div id="result-info" class="result-block d-none" aria-live="polite">
@@ -390,23 +503,53 @@
         </div>
 
         <div id="status" class="d-none mt-3" role="status"></div>
+        </div>
+        <div class="card-footer">
+          <div class="form-actions">
+            <button type="button" class="btn btn-primary btn-lg" id="submit" disabled>
+              <i class="bi bi-play-fill" aria-hidden="true"></i> Преобразовать
+            </button>
+            <button type="button" class="btn btn-outline-secondary" id="save-sample" disabled>
+              <i class="bi bi-bookmark" aria-hidden="true"></i> Сохранить маппинг полей
+            </button>
+            <div id="download-actions" class="form-actions d-none" aria-live="polite">
+              <button type="button" class="btn btn-success btn-lg" id="download">
+                <i class="bi bi-download" aria-hidden="true"></i> Скачать файл
+              </button>
+              <button type="button" class="btn btn-outline-warning d-none" id="download-remarks">
+                <i class="bi bi-exclamation-triangle" aria-hidden="true"></i> Скачать файл замечаний
+              </button>
+            </div>
+          </div>
+          <p class="form-text mb-0 mt-2" id="sample-name-preview"></p>
+        </div>
           </div>
 
           <div class="tab-pane fade" id="tab-matching" role="tabpanel"
                aria-labelledby="tab-matching-btn" tabindex="0">
-            <p class="text-muted small mb-3">
-              Сначала преобразуйте выгрузку на соседней вкладке, затем загрузите тот же файл результата.
-              Метчинг по договору: номер, дата, тип и предмет договора, ИНН заказчика и исполнителя.
-              На выходе — ERID и ID в OTM, OZON, VK. В файле два листа: ID (краткий) и Выгрузка с ID
-              (основные поля договора/сторон + ID).
-            </p>
-
+            <div class="card-header">
+              <div class="card-head-title">
+                <i class="bi bi-intersect" aria-hidden="true"></i>
+                Сопоставление договоров
+              </div>
+              <div class="card-head-lead">Сначала преобразуйте выгрузку, затем загрузите тот же файл. На выходе ERID и ID в OTM / OZON / VK.</div>
+            </div>
+            <div class="card-body">
             <div id="match-attrs-info" class="alert alert-light border small mb-3" role="status"></div>
 
-            <nav class="steps mb-3" aria-label="Шаги метчинга">
-              <div class="step active" id="match-step-file"><i class="bi bi-file-earmark" aria-hidden="true"></i>1. Файл преобразования</div>
-              <div class="step" id="match-step-run"><i class="bi bi-gear" aria-hidden="true"></i>2. Метчинг</div>
-              <div class="step" id="match-step-dl"><i class="bi bi-download" aria-hidden="true"></i>3. Скачать</div>
+            <nav class="steps steps-match mb-3" aria-label="Шаги метчинга">
+              <div class="step active" id="match-step-file">
+                <span class="step-dot"><i class="bi bi-file-earmark" aria-hidden="true"></i></span>
+                <span class="step-label">Файл преобразования</span>
+              </div>
+              <div class="step" id="match-step-run">
+                <span class="step-dot"><i class="bi bi-gear" aria-hidden="true"></i></span>
+                <span class="step-label">Метчинг</span>
+              </div>
+              <div class="step" id="match-step-dl">
+                <span class="step-dot"><i class="bi bi-download" aria-hidden="true"></i></span>
+                <span class="step-label">Скачать</span>
+              </div>
             </nav>
 
             <section class="mb-4" aria-labelledby="lbl-match-file">
@@ -414,10 +557,12 @@
               <div class="drop-zone" id="match-drop-zone" tabindex="0" role="button"
                    aria-label="Выберите файл результата преобразования">
                 <input type="file" id="match-file" accept=".xlsx,.xlsm,.xls" />
-                <div id="match-drop-placeholder">
+                <div id="match-drop-placeholder" class="drop-placeholder">
                   <i class="bi bi-cloud-upload drop-zone-icon" aria-hidden="true"></i>
-                  <div class="text-muted small">Файл с вкладки «Преобразование выгрузки»</div>
-                  <div class="text-muted small mt-1">.xlsx / .xlsm — шаблон загрузки DSP</div>
+                  <div>
+                    <div class="text-muted small">Файл с вкладки «Преобразование выгрузки»</div>
+                    <div class="text-muted small">.xlsx / .xlsm — шаблон загрузки DSP</div>
+                  </div>
                 </div>
                 <div id="match-drop-selected" class="file-meta d-none">
                   <div class="file-row">
@@ -433,12 +578,6 @@
               </div>
             </section>
 
-            <div class="d-grid gap-2 mb-2">
-              <button type="button" class="btn btn-primary btn-lg" id="match-submit" disabled>
-                <i class="bi bi-intersect" aria-hidden="true"></i> Сметчить
-              </button>
-            </div>
-
             <div id="match-progress-wrap" class="d-none mb-3" aria-live="polite">
               <div class="d-flex justify-content-between align-items-center small mb-1">
                 <span id="match-progress-label">Загрузка…</span>
@@ -450,25 +589,36 @@
               </div>
             </div>
 
-            <div id="match-download-actions" class="d-grid gap-2 mb-3 d-none" aria-live="polite">
-              <button type="button" class="btn btn-success btn-lg" id="match-download">
-                <i class="bi bi-download" aria-hidden="true"></i> Скачать сметченный файл
-              </button>
-            </div>
-
             <div id="match-result-info" class="result-block d-none" aria-live="polite">
               <p class="small text-success mb-0" id="match-result-hint"></p>
             </div>
 
             <div id="match-status" class="d-none mt-3" role="status"></div>
+            </div>
+            <div class="card-footer">
+              <div class="form-actions">
+                <button type="button" class="btn btn-primary btn-lg" id="match-submit" disabled>
+                  <i class="bi bi-intersect" aria-hidden="true"></i> Сметчить
+                </button>
+                <div id="match-download-actions" class="form-actions d-none" aria-live="polite">
+                  <button type="button" class="btn btn-success btn-lg" id="match-download">
+                    <i class="bi bi-download" aria-hidden="true"></i> Скачать сметченный файл
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div class="tab-pane fade" id="tab-dadata" role="tabpanel"
                aria-labelledby="tab-dadata-btn" tabindex="0">
-            <p class="text-muted small mb-3">
-              Проверка юридических лиц и ИП по ИНН через DaData: разовая карточка или массовая
-              выгрузка из файла.
-            </p>
+            <div class="card-header">
+              <div class="card-head-title">
+                <i class="bi bi-building" aria-hidden="true"></i>
+                Проверка юридических лиц
+              </div>
+              <div class="card-head-lead">Разовая карточка или массовая проверка по ИНН через DaData.</div>
+            </div>
+            <div class="card-body">
             <div id="dadata-config-info" class="alert alert-light border small mb-3" role="status">
               Проверка ключа DaData…
             </div>
@@ -525,10 +675,12 @@
                        aria-label="Выберите или перетащите файл с ИНН">
                     <input type="file" id="dadata-file"
                            accept=".xlsx,.xls,.csv,.txt,.tsv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain" />
-                    <div id="dadata-drop-placeholder">
+                    <div id="dadata-drop-placeholder" class="drop-placeholder">
                       <i class="bi bi-cloud-upload drop-zone-icon" aria-hidden="true"></i>
-                      <div class="text-muted small">Перетащите файл сюда или нажмите для выбора</div>
-                      <div class="text-muted small mt-1">.xlsx, .xls, .csv, .txt, .tsv</div>
+                      <div>
+                        <div class="text-muted small">Перетащите файл сюда или нажмите для выбора</div>
+                        <div class="text-muted small">.xlsx, .xls, .csv, .txt, .tsv</div>
+                      </div>
                     </div>
                     <div id="dadata-drop-selected" class="file-meta d-none">
                       <div class="file-row">
@@ -554,11 +706,6 @@
                     <option value="csv">CSV</option>
                   </select>
                 </section>
-                <div class="d-grid gap-2 mb-2">
-                  <button type="button" class="btn btn-primary btn-lg" id="dadata-batch-btn" disabled>
-                    <i class="bi bi-file-earmark-arrow-down" aria-hidden="true"></i> Проверить и скачать
-                  </button>
-                </div>
                 <div id="dadata-batch-progress-wrap" class="d-none mb-3" aria-live="polite">
                   <div class="d-flex justify-content-between align-items-center small mb-1">
                     <span id="dadata-batch-progress-label">Проверка…</span>
@@ -571,16 +718,26 @@
                   </div>
                 </div>
                 <div id="dadata-batch-status" class="d-none mt-3" role="status"></div>
+                <div class="form-actions mt-2">
+                  <button type="button" class="btn btn-primary btn-lg" id="dadata-batch-btn" disabled>
+                    <i class="bi bi-file-earmark-arrow-down" aria-hidden="true"></i> Проверить и скачать
+                  </button>
+                </div>
               </div>
+            </div>
             </div>
           </div>
 
           <div class="tab-pane fade" id="tab-fl-address" role="tabpanel"
                aria-labelledby="tab-fl-address-btn" tabindex="0">
-            <p class="text-muted small mb-3">
-              Адрес физлица по первым цифрам ИНН: код налоговой постановки на учёт,
-              не место жительства. DaData для физлиц не используется.
-            </p>
+            <div class="card-header">
+              <div class="card-head-title">
+                <i class="bi bi-geo-alt" aria-hidden="true"></i>
+                Адрес физического лица
+              </div>
+              <div class="card-head-lead">Адрес по коду налоговой в ИНН, не место жительства.</div>
+            </div>
+            <div class="card-body">
 
             <ul class="nav nav-pills mb-3" id="fl-address-subtabs" role="tablist">
               <li class="nav-item" role="presentation">
@@ -632,10 +789,12 @@
                        aria-label="Выберите или перетащите файл с ИНН">
                     <input type="file" id="fl-address-file"
                            accept=".xlsx,.xls,.csv,.txt,.tsv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv,text/plain" />
-                    <div id="fl-address-drop-placeholder">
+                    <div id="fl-address-drop-placeholder" class="drop-placeholder">
                       <i class="bi bi-cloud-upload drop-zone-icon" aria-hidden="true"></i>
-                      <div class="text-muted small">Перетащите файл сюда или нажмите для выбора</div>
-                      <div class="text-muted small mt-1">.xlsx, .xls, .csv, .txt, .tsv</div>
+                      <div>
+                        <div class="text-muted small">Перетащите файл сюда или нажмите для выбора</div>
+                        <div class="text-muted small">.xlsx, .xls, .csv, .txt, .tsv</div>
+                      </div>
                     </div>
                     <div id="fl-address-drop-selected" class="file-meta d-none">
                       <div class="file-row">
@@ -661,11 +820,6 @@
                     <option value="csv">CSV</option>
                   </select>
                 </section>
-                <div class="d-grid gap-2 mb-2">
-                  <button type="button" class="btn btn-primary btn-lg" id="fl-address-batch-btn" disabled>
-                    <i class="bi bi-file-earmark-arrow-down" aria-hidden="true"></i> Проверить и скачать
-                  </button>
-                </div>
                 <div id="fl-address-batch-progress-wrap" class="d-none mb-3" aria-live="polite">
                   <div class="d-flex justify-content-between align-items-center small mb-1">
                     <span id="fl-address-batch-progress-label">Проверка…</span>
@@ -678,14 +832,22 @@
                   </div>
                 </div>
                 <div id="fl-address-batch-status" class="d-none mt-3" role="status"></div>
+                <div class="form-actions mt-2">
+                  <button type="button" class="btn btn-primary btn-lg" id="fl-address-batch-btn" disabled>
+                    <i class="bi bi-file-earmark-arrow-down" aria-hidden="true"></i> Проверить и скачать
+                  </button>
+                </div>
               </div>
+            </div>
             </div>
           </div>
         </div>
-      </div>
     </div>
     </main>
   </div>
+  <footer class="app-footer">
+    <div class="app-shell-inner">DSP Data Tool</div>
+  </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   <script>
@@ -1766,6 +1928,20 @@
     loadMatchStatus();
 
     initReportPeriod();
+
+    fetch('/health').then(r => r.json()).then(d => {
+      const el = document.getElementById('app-health');
+      if (!el) return;
+      const item = (ok, label) =>
+        `<span class="${ok ? 'ok' : 'bad'}"><i class="bi ${ok ? 'bi-check-circle' : 'bi-x-circle'}" aria-hidden="true"></i>${label}</span>`;
+      el.innerHTML = [
+        item(d.template_ok, 'Шаблон'),
+        item(d.spravka_ok, 'Справочник'),
+        item(d.contract_attrs_ok, 'Договоры'),
+        item(d.dadata_configured, 'DaData'),
+      ].join('');
+      el.hidden = false;
+    }).catch(() => {});
 
     fetch('/api/partners').then(r => r.json()).then(d => {
       partners = (d.partners || []).slice().sort((a, b) => a.display_name.localeCompare(b.display_name, 'ru'));
