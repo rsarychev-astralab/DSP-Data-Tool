@@ -28,7 +28,7 @@ GitHub Pages **не подходит**: нет Python и обработки `.xl
 ## Docker локально (проверка перед облаком)
 
 ```bash
-cd "/Users/lucsijsotrudniknasvete/DSP-Data-Tool"
+cd "/Users/lucsijsotrudniknasvete/Documents/Projects/DSP-Data-Tool"
 docker build -t dsp-transform .
 docker run --rm -p 8000:8000 dsp-transform
 ```

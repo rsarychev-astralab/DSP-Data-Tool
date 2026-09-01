@@ -106,9 +106,12 @@ def main() -> None:
     ws = wb.active
     ws.title = "Sheet1"
     for col, value in enumerate(TEMPLATE_HEADERS, 1):
-        ws.cell(1, col, value)
+        cell = ws.cell(1, col, value)
+        cell.number_format = "@"
     for col, value in enumerate(DESCRIPTIONS, 1):
         ws.cell(2, col, value)
+    ws.cell(1, 20).number_format = "0"
+    ws.cell(1, 21).number_format = "#,##0.00"
     wb.save(path)
     print(f"Wrote {path} ({len(TEMPLATE_HEADERS)} columns)")
 

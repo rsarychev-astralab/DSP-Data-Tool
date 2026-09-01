@@ -9,6 +9,18 @@ source:
   sheet: Invoice data
   data_from_row: 3
 
+header_check:
+  row: 2
+  columns:
+    6: [ERID]
+    7: [Сумма без НДС]
+    10: [Сумма с НДС]
+    11: [Номер изначального договора]
+    17: [Название агентства]
+    21: [Адрес агентства]
+    22: [Название рекламодателя]
+    26: [Адрес рекламодателя]
+
 column_map:
   erid: 6
   contract_no: 11
@@ -19,11 +31,13 @@ column_map:
   customer_name: 22
   customer_type: 23
   customer_inn: 24
+  customer_address: 26
   customer_reg_no: 30
   customer_oksm: 29
   contractor_name: 17
   contractor_type: 18
   contractor_inn: 19
+  contractor_address: 21
   contractor_reg_no: 20
   vat_included: 14
 
@@ -31,5 +45,12 @@ amount_by_vat:
   vat_field: vat_included
   with_vat: 10
   without_vat: 7
+
+optional_output_fields:
+  - customer_address
+  - contractor_address
+  - customer_reg_no
+  - customer_oksm
+  - contractor_reg_no
 
 constants: {}

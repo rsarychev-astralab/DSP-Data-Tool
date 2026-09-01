@@ -9,6 +9,16 @@ empty_markers:
   - "(пусто)"
   - пусто
 
+header_check:
+  row: 1
+  columns:
+    0: [token, erid]
+    1: [Наименование клиента]
+    2: [ИНН клиента]
+    6: [Наименование Исполнителя]
+    11: [Номер изначального договора]
+    17: [winprice, Сумма]
+
 column_map:
   erid: 0
   customer_name: 1

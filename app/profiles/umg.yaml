@@ -5,6 +5,16 @@ source:
   sheet: Sheet1
   data_from_row: 2
 
+header_check:
+  row: 1
+  columns:
+    0: [Erid, ERID]
+    1: [Зачеты]
+    2: [Сумма]
+    7: [наименование рекламодателя]
+    8: [наименование исполнителя]
+    11: [Номер изначального договора]
+
 column_map:
   erid: 0
   impressions: 1

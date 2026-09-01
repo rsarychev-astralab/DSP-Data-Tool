@@ -8,10 +8,21 @@ from app.engine.header_check import (
 from app.profiles.loader import load_profile
 
 
-def test_sape_profile_has_header_check():
-    profile = load_profile("sape")
+@pytest.mark.parametrize(
+    "partner_id,header_row",
+    [
+        ("sape", 1),
+        ("buzzoola", 2),
+        ("otm", 1),
+        ("umg", 1),
+        ("adriver", 1),
+        ("adiamtech", 1),
+    ],
+)
+def test_profiles_have_header_check(partner_id, header_row):
+    profile = load_profile(partner_id)
     assert profile.header_check is not None
-    assert profile.header_check.row == 1
+    assert profile.header_check.row == header_row
 
 
 def test_validate_headers_passes_for_sape_layout():
@@ -38,6 +49,44 @@ def test_validate_headers_fails_on_column_shift():
     shifted = ("Показы",) + ("x",) * 13 + ("Тип договора",)
     with pytest.raises(ValueError, match="сместились"):
         validate_source_headers(shifted, check)
+
+
+@pytest.mark.parametrize(
+    "partner_id,filename",
+    [
+        ("sape", "sape.xlsx"),
+        ("buzzoola", "buzzoola.xlsx"),
+        ("otm", "OTM.xlsx"),
+        ("umg", "UMG.xlsx"),
+        ("adriver", "adriver.xlsx"),
+        ("adiamtech", "adiamtech.xlsx"),
+        ("plazkart", "plazkart.xlsx"),
+        ("programmatica", "Programmatica.xlsx"),
+        ("genius_desk", "Genius Desk.xlsx"),
+        ("bidvol", "bidvol.xls"),
+    ],
+)
+def test_real_source_passes_header_check(partner_id, filename):
+    from pathlib import Path
+
+    from app.config import SOURCE_DATA_DIR
+    from app.engine.header_check import read_header_row, validate_source_headers
+    from app.engine.xls_source import open_source_workbook
+
+    source = SOURCE_DATA_DIR / filename
+    if not source.exists():
+        pytest.skip(f"{filename} not present")
+    profile = load_profile(partner_id)
+    if profile.header_check is None:
+        pytest.skip("no header_check")
+    wb, _ = open_source_workbook(source, filename=source.name)
+    try:
+        ws = wb[profile.sheet]
+        max_index = max(rule.index for rule in profile.header_check.columns)
+        header_row = read_header_row(ws, profile.header_check.row, max_index)
+        validate_source_headers(header_row, profile.header_check)
+    finally:
+        wb.close()
 
 
 def test_transform_sape_real_file_passes_header_check():

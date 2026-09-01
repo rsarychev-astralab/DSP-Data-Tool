@@ -5,6 +5,16 @@ source:
   sheet: Sheet1
   data_from_row: 2
 
+header_check:
+  row: 1
+  columns:
+    0: [Токен, erid]
+    1: [Показы]
+    2: [Сумма]
+    3: [Номер изначального договора]
+    11: [Наименование Заказчика]
+    14: [Наименование Исполнителя]
+
 column_map:
   erid: 0
   impressions: 1
