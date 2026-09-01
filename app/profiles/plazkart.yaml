@@ -35,4 +35,6 @@ optional_output_fields:
   - contractor_reg_no
   - contractor_oksm
 
-constants: {}
+# Сумма всегда из колонки «Сумма с НДС». Показов в выгрузке нет — skip.
+constants:
+  vat_included: "yes"

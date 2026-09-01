@@ -16,6 +16,7 @@ SUBJECT_TYPE = {
     "посредничество": "Mediation",
     "представительство": "Representation",
     "иное": "Other",
+    "другое": "Other",
     "distribution": "Distribution",
     "distributionorganization": "DistributionOrganization",
     "mediation": "Mediation",

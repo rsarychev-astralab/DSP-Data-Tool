@@ -66,6 +66,35 @@ def normalize_lookup(val, mapping):
     return mapping.get(norm_key(val))
 
 
+_VAT_NO = {
+    "no",
+    "нет",
+    "безндс",
+    "безндс%",
+    "false",
+    "f",
+    "0",
+    "vatno",
+    "withoutvat",
+    "wovat",
+}
+_VAT_YES = {
+    "yes",
+    "да",
+    "сндс",
+    "ндсда",
+    "включаяндс",
+    "withvat",
+    "22%",
+    "20%",
+    "18%",
+    "10%",
+    "true",
+    "t",
+    "1",
+}
+
+
 def normalize_vat(val):
     if val is True:
         return "yes"
@@ -79,10 +108,14 @@ def normalize_vat(val):
     if not has_value(val):
         return None
     key = norm_key(val)
-    if key in {"yes", "да", "сндс", "ндсда", "22%", "20%", "18%", "10%", "true", "t", "1"} or "ндс" in key:
-        return "yes"
-    if key in {"no", "нет", "безндс", "false", "f", "0"}:
+    if key in _VAT_NO or key.startswith("безндс"):
         return "no"
+    if key in _VAT_YES:
+        return "yes"
+    if "безндс" in key:
+        return "no"
+    if "ндс" in key:
+        return "yes"
     return None
 
 

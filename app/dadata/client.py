@@ -34,7 +34,7 @@ async def fetch_party(client: httpx.AsyncClient, inn: str) -> dict | None:
     if response.status_code != 200:
         raise HTTPException(
             status_code=502,
-            detail=f"DaData error {response.status_code}: {response.text[:300]}",
+            detail=f"DaData error {response.status_code}",
         )
     suggestions = (response.json() or {}).get("suggestions") or []
     return suggestions[0] if suggestions else None
@@ -61,7 +61,7 @@ async def suggest_party(query: str, count: int) -> dict:
     if response.status_code != 200:
         raise HTTPException(
             status_code=502,
-            detail=f"DaData error {response.status_code}: {response.text[:300]}",
+            detail=f"DaData error {response.status_code}",
         )
 
     return response.json()

@@ -51,3 +51,35 @@ def dadata_api_key() -> str:
 
 def dadata_configured() -> bool:
     return bool(dadata_api_key())
+
+
+def basic_auth_credentials() -> tuple[str, str]:
+    user = os.environ.get("DSP_BASIC_USER", "").strip()
+    password = os.environ.get("DSP_BASIC_PASSWORD", "")
+    if not user or not password:
+        return "", ""
+    return user, password
+
+
+def auth_configured() -> bool:
+    return bool(basic_auth_credentials()[0])
+
+
+def docs_enabled() -> bool:
+    return os.environ.get("DSP_ENABLE_DOCS", "").strip().lower() in {"1", "true", "yes"}
+
+
+def dadata_rate_limit_per_min() -> int:
+    raw = os.environ.get("DADATA_RATE_LIMIT_PER_MIN", "60").strip()
+    try:
+        return max(1, int(raw))
+    except ValueError:
+        return 60
+
+
+def dadata_max_jobs() -> int:
+    raw = os.environ.get("DADATA_MAX_JOBS", "2").strip()
+    try:
+        return max(1, int(raw))
+    except ValueError:
+        return 2

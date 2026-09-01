@@ -134,10 +134,12 @@ def normalize_vat(val):
     if not has_value(val):
         return None
     key = norm_key(val)
-    if key in {"yes", "сндс", "ндсда", "22%", "20%", "18%", "10%"} or "ндс" in key:
-        return "yes"
-    if key in {"no", "безндс"}:
+    if key in {"no", "безндс"} or key.startswith("безндс") or "безндс" in key:
         return "no"
+    if key in {"yes", "сндс", "ндсда", "22%", "20%", "18%", "10%"}:
+        return "yes"
+    if "ндс" in key:
+        return "yes"
     return None
 
 

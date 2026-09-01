@@ -1,5 +1,7 @@
+from io import BytesIO
 from pathlib import Path
 
+import openpyxl
 import pytest
 
 from app.config import TEMPLATE_PATH
@@ -66,3 +68,63 @@ def test_transform_buzzoola_writes_addresses():
     with_contractor = sum(1 for rec in result.records if rec.get("contractor_address"))
     assert with_customer > 0
     assert with_contractor > 0
+
+
+def test_buzzoola_amount_by_vat_without_vat_uses_without_vat_column():
+    profile = load_profile("buzzoola")
+    record = build_record(
+        {
+            "erid": "abc",
+            "vat_included": "без НДС",
+            "_col_7": 10.5,
+            "_col_10": 12.6,
+        },
+        profile,
+    )
+    assert record["vat_included"] == "no"
+    assert record["amount"] == 10.5
+
+
+def test_buzzoola_amount_by_vat_skips_when_vat_empty():
+    profile = load_profile("buzzoola")
+    record = build_record(
+        {
+            "erid": "abc",
+            "vat_included": None,
+            "_col_7": 10.5,
+            "_col_10": 12.6,
+        },
+        profile,
+    )
+    assert "amount" not in record
+    assert "vat_included" not in record
+
+
+def test_transform_reports_skip_reasons():
+    profile = load_profile("genius_desk")
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Лист2"
+    headers = [""] * 20
+    headers[0] = "Номер_Договора"
+    headers[5] = "erid"
+    headers[7] = "Тип_Рекламодателя"
+    headers[13] = "imps"
+    for col, val in enumerate(headers, 1):
+        ws.cell(1, col, val)
+    ws.cell(2, 1, "DOG-1")
+    ws.cell(2, 6, "")
+    ws.cell(2, 13, "Agency")
+    buf = BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    result = transform_source(
+        buf,
+        profile,
+        template_path=TEMPLATE_PATH,
+        output_filename="t.xlsx",
+        source_filename="t.xlsx",
+    )
+    assert result.skipped_empty_rows >= 1
+    assert result.skipped_reasons
+    assert any("нет ERID" in r or "пустая" in r for r in result.skipped_reasons)

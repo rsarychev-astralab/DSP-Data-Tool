@@ -3,18 +3,20 @@ display_name: Programmatica
 
 source:
   sheet: astralab
+  sheets:
+    - result
   data_from_row: 2
 
 header_check:
   row: 1
   columns:
     1: [erid]
+    2: [initial_contract_sign_date, initial_contract_date, sign_date]
     3: [initial_contract_number]
-    7: [parent_contract_sign_date]
-    12: [client_inn]
-    15: [contractor_inn]
-    18: [initial_contract_vat_included]
-    21: [Показы]
+    7: [client_inn]
+    10: [contractor_inn]
+    13: [initial_contract_vat_included]
+    15: [Показы]
 
 column_map:
   erid: 1
@@ -23,15 +25,15 @@ column_map:
   contract_type: 4
   contract_subject: 5
   activity_type: 6
-  customer_inn: 12
-  customer_name: 13
-  customer_type: 14
-  contractor_inn: 15
-  contractor_name: 16
-  contractor_type: 17
-  vat_included: 18
-  impressions: 21
-  amount: 22
+  customer_inn: 7
+  customer_name: 8
+  customer_type: 9
+  contractor_inn: 10
+  contractor_name: 11
+  contractor_type: 12
+  vat_included: 13
+  impressions: 15
+  amount: 16
 
 optional_output_fields:
   - customer_reg_no

@@ -132,7 +132,10 @@ def get_catalog_warnings() -> list[str]:
 
 
 def get_catalog_entry(partner_id: str) -> DspCatalogEntry | None:
+    resolved = resolve_profile_id(partner_id)
     for entry in _catalog_snapshot().entries:
-        if entry.id == partner_id:
+        if entry.id == partner_id or entry.id == resolved:
+            return entry
+        if entry.profile_id and entry.profile_id == resolved:
             return entry
     return None

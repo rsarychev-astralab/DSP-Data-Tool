@@ -10,6 +10,7 @@ def test_health_includes_dadata_flag():
     assert res.status_code == 200
     body = res.json()
     assert "dadata_configured" in body
+    assert "auth_configured" in body
     assert body["status"] == "ok"
 
 

@@ -7,20 +7,37 @@ from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.responses import HTMLResponse, Response
 from fastapi.staticfiles import StaticFiles
 
+from app.auth import BasicAuthMiddleware
 from app.catalog import get_catalog_entry, get_catalog_warnings, load_dsp_catalog
-from app.config import SPRAVKA_DSP_PATH, STATIC_DIR, TEMPLATE_PATH, dadata_configured
+from app.config import (
+    SPRAVKA_DSP_PATH,
+    STATIC_DIR,
+    TEMPLATE_PATH,
+    auth_configured,
+    dadata_configured,
+    docs_enabled,
+)
 from app.dadata import router as dadata_router
 from app.fl_address import router as fl_address_router
 from app.engine.transform import transform_source
 from app.http_utils import encode_validation_errors, encode_validation_rows
 from app.profiles.loader import has_transform_profile, load_profile
 from app.reporting import build_output_filename, validate_report_period
-from app.source_data import save_source_file
+from app.source_data import MAX_SOURCE_BYTES, save_source_file
 from app.matching.match import match_workbook_bytes, resolve_contract_attrs_path
+from app.uploads import read_upload_limited
 from app.validation.remarks import build_remarks_filename, build_validation_remarks_bytes
 from app.validation.validate import validate_records, validate_workbook_bytes
 
-app = FastAPI(title="DSP Data Tool", version="0.1.0")
+_ENABLE_DOCS = docs_enabled()
+app = FastAPI(
+    title="DSP Data Tool",
+    version="0.1.0",
+    docs_url="/docs" if _ENABLE_DOCS else None,
+    redoc_url="/redoc" if _ENABLE_DOCS else None,
+    openapi_url="/openapi.json" if _ENABLE_DOCS else None,
+)
+app.add_middleware(BasicAuthMiddleware)
 app.include_router(dadata_router)
 app.include_router(fl_address_router)
 
@@ -84,9 +101,7 @@ async def api_source_data(
             f"Для «{entry.display_name}» преобразование уже настроено — загрузка образца не нужна.",
         )
 
-    content = await file.read()
-    if len(content) > 50 * 1024 * 1024:
-        raise HTTPException(400, "Файл больше 50 МБ")
+    content = await read_upload_limited(file, MAX_SOURCE_BYTES)
 
     try:
         saved = await asyncio.to_thread(
@@ -144,9 +159,7 @@ async def api_transform(
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
 
-    content = await file.read()
-    if len(content) > 50 * 1024 * 1024:
-        raise HTTPException(400, "Файл больше 50 МБ")
+    content = await read_upload_limited(file, MAX_SOURCE_BYTES)
 
     out_name = build_output_filename(partner_id, report_month, report_year)
     try:
@@ -187,6 +200,9 @@ async def api_transform(
     encoded_rows = encode_validation_rows(validation.row_numbers)
     if encoded_rows:
         headers["X-Validation-Rows"] = encoded_rows
+    encoded_skipped = encode_validation_errors(result.skipped_reasons)
+    if encoded_skipped:
+        headers["X-Skipped-Reasons"] = encoded_skipped
 
     headers["Content-Length"] = str(len(result.output_bytes))
     return Response(
@@ -221,9 +237,7 @@ async def api_validation_remarks(
     except ValueError as e:
         raise HTTPException(400, str(e)) from e
 
-    content = await file.read()
-    if len(content) > 50 * 1024 * 1024:
-        raise HTTPException(400, "Файл больше 50 МБ")
+    content = await read_upload_limited(file, MAX_SOURCE_BYTES)
 
     try:
         profile = load_profile(partner_id)
@@ -270,9 +284,7 @@ async def api_match(file: UploadFile = File(...)):
     if not file.filename or not file.filename.lower().endswith((".xlsx", ".xlsm", ".xls")):
         raise HTTPException(400, "Нужен файл .xlsx, .xlsm или .xls")
 
-    content = await file.read()
-    if len(content) > 50 * 1024 * 1024:
-        raise HTTPException(400, "Файл больше 50 МБ")
+    content = await read_upload_limited(file, MAX_SOURCE_BYTES)
 
     process_started = time.perf_counter()
     try:
@@ -318,4 +330,5 @@ def health():
         "spravka_ok": SPRAVKA_DSP_PATH.exists(),
         "contract_attrs_ok": attrs_path is not None,
         "dadata_configured": dadata_configured(),
+        "auth_configured": auth_configured(),
     }

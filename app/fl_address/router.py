@@ -15,6 +15,7 @@ from app.fl_address.batch import (
     suffix_allowed,
 )
 from app.fl_address.core import lookup_fl_address
+from app.uploads import read_upload_limited
 
 router = APIRouter(prefix="/api/fl-address", tags=["fl-address"])
 
@@ -82,11 +83,9 @@ async def fl_address_batch(
             detail="Поддерживаются файлы .xlsx, .xls, .csv, .txt, .tsv",
         )
 
-    content = await file.read()
+    content = await read_upload_limited(file, MAX_UPLOAD_BYTES)
     if not content:
         raise HTTPException(status_code=400, detail="Файл пустой")
-    if len(content) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status_code=400, detail="Файл больше 10 МБ")
 
     fmt = (output_format or "auto").strip().lower()
     if fmt != "auto" and fmt not in ALLOWED_OUTPUT:

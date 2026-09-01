@@ -17,6 +17,13 @@ from app.profiles.loader import load_profile
         ("umg", 1),
         ("adriver", 1),
         ("adiamtech", 1),
+        ("giraff", 1),
+        ("targetrtb", 1),
+        ("between", 1),
+        ("plazkart", 1),
+        ("programmatica", 1),
+        ("genius_desk", 1),
+        ("bidvol", 1),
     ],
 )
 def test_profiles_have_header_check(partner_id, header_row):
@@ -64,6 +71,9 @@ def test_validate_headers_fails_on_column_shift():
         ("programmatica", "Programmatica.xlsx"),
         ("genius_desk", "Genius Desk.xlsx"),
         ("bidvol", "bidvol.xls"),
+        ("giraff", "giraff.xlsx"),
+        ("targetrtb", "targetrtb.xlsx"),
+        ("between", "between.xlsx"),
     ],
 )
 def test_real_source_passes_header_check(partner_id, filename):
@@ -81,7 +91,11 @@ def test_real_source_passes_header_check(partner_id, filename):
         pytest.skip("no header_check")
     wb, _ = open_source_workbook(source, filename=source.name)
     try:
-        ws = wb[profile.sheet]
+        candidates = profile.sheet_candidates or (profile.sheet,)
+        sheet_name = next((name for name in candidates if name in wb.sheetnames), None)
+        if sheet_name is None:
+            pytest.fail(f"sheet {candidates} not in {wb.sheetnames}")
+        ws = wb[sheet_name]
         max_index = max(rule.index for rule in profile.header_check.columns)
         header_row = read_header_row(ws, profile.header_check.row, max_index)
         validate_source_headers(header_row, profile.header_check)
@@ -108,3 +122,29 @@ def test_transform_sape_real_file_passes_header_check():
             output_filename="test.xlsx",
         )
     assert result.rows_written > 0
+
+
+def test_synthetic_headers_pass_for_new_profiles():
+    for partner_id in ("giraff", "targetrtb", "between", "umg", "programmatica"):
+        profile = load_profile(partner_id)
+        assert profile.header_check is not None
+        max_index = max(rule.index for rule in profile.header_check.columns)
+        header = [""] * (max_index + 1)
+        for rule in profile.header_check.columns:
+            header[rule.index] = rule.patterns[0]
+        validate_source_headers(tuple(header), profile.header_check)
+
+
+def test_plazkart_maps_vat_from_with_vat_amount_column():
+    profile = load_profile("plazkart")
+    assert "impressions" not in profile.column_map
+    assert "vat_included" not in profile.column_map
+    assert profile.constants.get("vat_included") == "yes"
+    assert profile.column_map["amount"] == 13
+
+
+def test_adriver_has_no_impressions_or_vat_source():
+    profile = load_profile("adriver")
+    assert "impressions" not in profile.column_map
+    assert "vat_included" not in profile.column_map
+    assert "vat_included" not in profile.constants

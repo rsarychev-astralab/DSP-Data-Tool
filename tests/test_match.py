@@ -127,7 +127,7 @@ def test_match_finds_contract_and_outputs_ids(tmp_path, monkeypatch):
 
 
 def test_match_by_contract_applies_to_all_erid_rows(tmp_path, monkeypatch):
-    """Один договор в базе — все строки с тем же номером получают ID, даже если дата в строке другая."""
+    """Один договор (полный ключ) — все ERID-строки с теми же атрибутами получают ID."""
     db_path = tmp_path / "База договоров.xlsx"
     db_path.write_bytes(_minimal_db_bytes())
     monkeypatch.setattr("app.matching.match.resolve_contract_attrs_path", lambda: db_path)
@@ -147,14 +147,13 @@ def test_match_by_contract_applies_to_all_erid_rows(tmp_path, monkeypatch):
     good[_idx("contractor_inn")] = "7700000001"
     good[_idx("impressions")] = 100
     good[_idx("amount")] = 10
-    bad_date = list(good)
-    bad_date[_idx("erid")] = "erid-b"
-    bad_date[_idx("contract_date")] = "2099-12-31"
-    bad_date[_idx("impressions")] = 200
-    bad_date[_idx("amount")] = 20
+    same_contract = list(good)
+    same_contract[_idx("erid")] = "erid-b"
+    same_contract[_idx("impressions")] = 200
+    same_contract[_idx("amount")] = 20
     for col, val in enumerate(good, 1):
         ws.cell(3, col, val)
-    for col, val in enumerate(bad_date, 1):
+    for col, val in enumerate(same_contract, 1):
         ws.cell(4, col, val)
     buf = BytesIO()
     wb.save(buf)
@@ -167,6 +166,40 @@ def test_match_by_contract_applies_to_all_erid_rows(tmp_path, monkeypatch):
     assert out[OUTPUT_SHEET_IDS].cell(3, 2).value == "999"
     assert out[OUTPUT_SHEET_UPLOAD].cell(4, len(UPLOAD_DETAIL_COLUMNS) + 1).value == "999"
     out.close()
+
+
+def test_match_does_not_collapse_same_number_different_inn(tmp_path, monkeypatch):
+    db_path = tmp_path / "База договоров.xlsx"
+    db_path.write_bytes(_minimal_db_bytes())
+    monkeypatch.setattr("app.matching.match.resolve_contract_attrs_path", lambda: db_path)
+
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    for col, h in enumerate(HEADERS, 1):
+        ws.cell(1, col, h)
+    good = [""] * len(COL_FIELD)
+    good[_idx("erid")] = "erid-a"
+    good[_idx("contract_no")] = "DOG-42"
+    good[_idx("contract_date")] = "2025-01-01"
+    good[_idx("contract_type")] = "Original"
+    good[_idx("contract_subject")] = "Distribution"
+    good[_idx("customer_inn")] = "7700000002"
+    good[_idx("contractor_inn")] = "7700000001"
+    other = list(good)
+    other[_idx("erid")] = "erid-b"
+    other[_idx("customer_inn")] = "7700000099"
+    for col, val in enumerate(good, 1):
+        ws.cell(3, col, val)
+    for col, val in enumerate(other, 1):
+        ws.cell(4, col, val)
+    buf = BytesIO()
+    wb.save(buf)
+
+    result = match_workbook_bytes(buf.getvalue())
+    assert result.contracts_total == 2
+    assert result.contracts_matched == 1
+    assert result.rows_matched == 1
+    assert result.rows_unmatched == 1
 
 
 def test_match_unmatched_row(tmp_path, monkeypatch):

@@ -29,3 +29,26 @@ def test_normalize_between_party_types_and_vat():
     assert normalize_field("customer_type", "resident_individual") == "PhysicalPerson"
     assert normalize_field("contract_type", "additional-agreement") == "Additional"
     assert normalize_field("vat_included", "1") == "yes"
+
+
+def test_normalize_vat_without_vat_is_no():
+    assert normalize_field("vat_included", "без НДС") == "no"
+    assert normalize_field("vat_included", "Без НДС") == "no"
+    assert normalize_field("vat_included", "безндс") == "no"
+    assert normalize_field("vat_included", "нет") == "no"
+    assert normalize_field("vat_included", "no") == "no"
+    assert normalize_field("vat_included", False) == "no"
+    assert normalize_field("vat_included", 0) == "no"
+
+
+def test_normalize_vat_with_vat_is_yes():
+    assert normalize_field("vat_included", "с НДС") == "yes"
+    assert normalize_field("vat_included", "включая НДС") == "yes"
+    assert normalize_field("vat_included", "да") == "yes"
+    assert normalize_field("vat_included", "20%") == "yes"
+    assert normalize_field("vat_included", True) == "yes"
+
+
+def test_normalize_contract_subject_drugoe():
+    assert normalize_field("contract_subject", "Другое") == "Other"
+    assert normalize_field("contract_subject", "Иное") == "Other"

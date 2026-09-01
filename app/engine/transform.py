@@ -23,6 +23,7 @@ class TransformResult:
     skipped_empty_rows: int
     filename: str
     records: list[dict]
+    skipped_reasons: list[str]
 
 
 def _is_empty_marker(val: Any, markers: tuple[str, ...]) -> bool:
@@ -59,10 +60,15 @@ def _resolve_amount(raw: dict, profile: PartnerProfile) -> Any:
     vat_field = rules.get("vat_field", "vat_included")
     vat_val = raw.get(vat_field)
     vat_norm = normalize_field(vat_field, vat_val)
-    col_key = "with_vat" if vat_norm == "yes" else "without_vat"
+    if vat_norm == "yes":
+        col_key = "with_vat"
+    elif vat_norm == "no":
+        col_key = "without_vat"
+    else:
+        return None
     col_idx = rules.get(col_key)
     if col_idx is None:
-        return raw.get("amount")
+        return None
     return raw.get(f"_col_{col_idx}") if f"_col_{col_idx}" in raw else None
 
 
@@ -110,12 +116,15 @@ def transform_source(
         source, filename=source_filename or (str(source) if isinstance(source, Path) else None)
     )
 
-    if profile.sheet not in src_wb.sheetnames:
+    candidates = profile.sheet_candidates or (profile.sheet,)
+    sheet_name = next((name for name in candidates if name in src_wb.sheetnames), None)
+    if sheet_name is None:
         available = ", ".join(src_wb.sheetnames)
         src_wb.close()
-        raise ValueError(f"Sheet {profile.sheet!r} not found. Available: {available}")
+        wanted = ", ".join(candidates)
+        raise ValueError(f"Sheet {wanted!r} not found. Available: {available}")
 
-    src_ws = src_wb[profile.sheet]
+    src_ws = src_wb[sheet_name]
 
     if profile.header_check:
         max_index = max(rule.index for rule in profile.header_check.columns)
@@ -124,10 +133,15 @@ def transform_source(
 
     records = []
     skipped_empty = 0
+    skipped_reasons: list[str] = []
 
-    for row in src_ws.iter_rows(min_row=profile.data_from_row, values_only=True):
+    for source_row_num, row in enumerate(
+        src_ws.iter_rows(min_row=profile.data_from_row, values_only=True),
+        start=profile.data_from_row,
+    ):
         if all(not has_value(v) for v in row):
             skipped_empty += 1
+            skipped_reasons.append(f"Строка {source_row_num}: пустая")
             continue
         raw = _extract_row_values(row, profile)
         for key, idx in profile.column_map.items():
@@ -143,17 +157,21 @@ def transform_source(
                     )
         record = build_record(raw, profile)
         if not record:
-            continue
-        if "erid" in profile.column_map and not has_value(record.get("erid")):
             skipped_empty += 1
+            skipped_reasons.append(f"Строка {source_row_num}: нет данных для шаблона")
             continue
-        if "contractor_name" in profile.column_map and not has_value(
+        skip_reason = None
+        if "erid" in profile.column_map and not has_value(record.get("erid")):
+            skip_reason = "нет ERID"
+        elif "contractor_name" in profile.column_map and not has_value(
             record.get("contractor_name")
         ):
+            skip_reason = "нет исполнителя"
+        elif "contract_no" in profile.column_map and not has_value(record.get("contract_no")):
+            skip_reason = "нет номера договора"
+        if skip_reason:
             skipped_empty += 1
-            continue
-        if "contract_no" in profile.column_map and not has_value(record.get("contract_no")):
-            skipped_empty += 1
+            skipped_reasons.append(f"Строка {source_row_num}: {skip_reason}")
             continue
         records.append(record)
 
@@ -168,4 +186,5 @@ def transform_source(
         skipped_empty_rows=skipped_empty,
         filename=output_filename,
         records=records,
+        skipped_reasons=skipped_reasons,
     )

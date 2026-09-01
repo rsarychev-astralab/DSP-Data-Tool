@@ -38,6 +38,7 @@ column_map:
   activity_type: 15
   amount: 17
 
+# В выгрузке нет показов и признака НДС — поля skip.
 # Часто пустые для юрлиц РФ — не блокируем скачивание
 optional_output_fields:
   - customer_reg_no

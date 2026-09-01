@@ -1545,6 +1545,7 @@
         resultBlob = new Blob([buffer], { type: mime });
         const rows = headers['x-rows-written'];
         const skippedEmpty = parseInt(headers['x-skipped-empty-rows'] || '0', 10);
+        const skippedList = parseValidationHeader(headers['x-skipped-reasons']);
         const valErrs = parseInt(headers['x-validation-error-count'] || '0', 10);
         const valList = parseValidationHeader(headers['x-validation-errors']);
         const processMs = parseInt(headers['x-process-time-ms'] || '0', 10);
@@ -1556,7 +1557,7 @@
 
         const parts = [];
         if (rows) parts.push(`Записано строк: ${rows}`);
-        parts.push(`Пустых строк во входе (пропущено): ${skippedEmpty}`);
+        parts.push(`Пропущено строк: ${skippedEmpty}`);
         const processLabel = formatDuration(processMs || totalMs);
         if (processLabel) {
           parts.push(`Время преобразования: ${processLabel}`);
@@ -1565,6 +1566,13 @@
           }
         }
         let hint = parts.join(' · ');
+        if (skippedList.length) {
+          const shown = skippedList.slice(0, 8);
+          hint += '. ' + shown.join('; ');
+          if (skippedList.length > shown.length) {
+            hint += ` … ещё ${skippedList.length - shown.length}`;
+          }
+        }
         if (valErrs > 0) {
           hint += '. Скачайте файл кнопкой выше или исправьте замечания ниже.';
         }

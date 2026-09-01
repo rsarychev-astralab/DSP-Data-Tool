@@ -28,6 +28,7 @@ class PartnerProfile:
     header_check: HeaderCheck | None = None
     # Поля из column_map, которые могут оставаться пустыми в шаблоне
     optional_output_fields: frozenset[str] = frozenset()
+    sheet_candidates: tuple[str, ...] = ()
 
 
 def _load_yaml(path: Path) -> dict:
@@ -97,10 +98,18 @@ def load_profile(partner_id: str) -> PartnerProfile:
             f"{', '.join(sorted(unknown_optional))}"
         )
 
+    sheet = str(source.get("sheet", "Sheet1"))
+    extra_sheets = source.get("sheets") or []
+    sheet_candidates = tuple(
+        dict.fromkeys(
+            [sheet] + [str(name).strip() for name in extra_sheets if str(name).strip()]
+        )
+    )
+
     return PartnerProfile(
         id=data["id"],
         display_name=data.get("display_name", data["id"]),
-        sheet=source.get("sheet", "Sheet1"),
+        sheet=sheet,
         data_from_row=int(source.get("data_from_row", 2)),
         column_map={k: int(v) for k, v in column_map.items()},
         constants=data.get("constants") or {},
@@ -108,4 +117,5 @@ def load_profile(partner_id: str) -> PartnerProfile:
         empty_markers=tuple(str(m).strip() for m in markers if str(m).strip()),
         header_check=header_check,
         optional_output_fields=optional_output_fields,
+        sheet_candidates=sheet_candidates or (sheet,),
     )

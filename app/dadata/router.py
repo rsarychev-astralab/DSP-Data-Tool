@@ -7,6 +7,7 @@ import httpx
 from fastapi import APIRouter, File, Form, HTTPException, Query, UploadFile
 from fastapi.responses import StreamingResponse
 
+from app.config import dadata_max_jobs, dadata_rate_limit_per_min
 from app.dadata.client import fetch_party, fetch_party_with_retry, suggest_party
 from app.dadata.core import (
     ALLOWED_OUTPUT,
@@ -22,6 +23,8 @@ from app.dadata.core import (
     party_to_row,
     suffix_allowed,
 )
+from app.rate_limit import SlidingWindowLimiter
+from app.uploads import read_upload_limited
 
 router = APIRouter(prefix="/api/dadata", tags=["dadata"])
 
@@ -44,6 +47,11 @@ class BatchJob:
 
 
 JOBS: dict[str, BatchJob] = {}
+_DADATA_LIMITER = SlidingWindowLimiter(dadata_rate_limit_per_min(), 60.0)
+
+
+def _running_job_count() -> int:
+    return sum(1 for job in JOBS.values() if job.status in {"queued", "running"})
 
 
 def _cleanup_jobs() -> None:
@@ -100,6 +108,7 @@ async def suggest(
     query: str = Query(..., min_length=1, max_length=300),
     count: int = Query(10, ge=1, le=20),
 ):
+    _DADATA_LIMITER.check()
     return await suggest_party(query, count)
 
 
@@ -107,6 +116,7 @@ async def suggest(
 async def party_by_inn(
     inn: str = Query(..., min_length=10, max_length=12, pattern=r"^\d{10}(\d{2})?$"),
 ):
+    _DADATA_LIMITER.check()
     if not inn_checksum_ok(inn):
         raise HTTPException(status_code=400, detail="Некорректная контрольная сумма ИНН")
 
@@ -124,6 +134,7 @@ async def batch_start(
     file: UploadFile = File(...),
     output_format: str = Form("auto"),
 ):
+    _DADATA_LIMITER.check()
     filename = file.filename or "inns.csv"
     if not suffix_allowed(filename):
         raise HTTPException(
@@ -131,9 +142,7 @@ async def batch_start(
             detail="Поддерживаются файлы .xlsx, .xls, .csv, .txt, .tsv",
         )
 
-    content = await file.read()
-    if len(content) > MAX_UPLOAD_BYTES:
-        raise HTTPException(status_code=400, detail="Файл больше 5 МБ")
+    content = await read_upload_limited(file, MAX_UPLOAD_BYTES)
 
     fmt = (output_format or "auto").strip().lower()
     if fmt == "auto":
@@ -146,6 +155,11 @@ async def batch_start(
 
     inns = parse_uploaded_inns(content, filename)
     _cleanup_jobs()
+    if _running_job_count() >= dadata_max_jobs():
+        raise HTTPException(
+            status_code=429,
+            detail="Слишком много задач DaData. Дождитесь завершения текущих.",
+        )
 
     job_id = uuid.uuid4().hex
     job = BatchJob(id=job_id, inns=inns, output_format=fmt)

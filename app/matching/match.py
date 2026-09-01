@@ -18,7 +18,7 @@ from app.config import (
 from app.engine.lookups import TEMPLATE_COL_COUNT, TEMPLATE_COLUMNS
 from app.engine.normalize import has_value
 from app.engine.template import TEXT_NUMBER_FORMAT, write_cell
-from app.matching.keys import build_match_key, norm_contract_no
+from app.matching.keys import build_match_key
 from app.validation.validate import COL_FIELD
 from app.validation.validate import HEADERS as TEMPLATE_HEADERS
 from app.validation.validate import is_empty
@@ -323,10 +323,7 @@ _CONTRACT_FIELDS = (
 
 
 def _contract_group_id(row: dict[str, Any]) -> str:
-    """Один договор в файле — одна группа (по номеру), не каждая строка ERID."""
-    no = norm_contract_no(row["contract_no"])
-    if no:
-        return f"no:{no}"
+    """Один договор = полный ключ (номер, дата, оба ИНН, тип, предмет), не только номер."""
     key = build_match_key(
         contract_no=row["contract_no"],
         contract_date=row["contract_date"],
