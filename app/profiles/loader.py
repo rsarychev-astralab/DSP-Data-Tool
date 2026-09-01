@@ -10,6 +10,7 @@ from app.engine.lookups import TEMPLATE_COLUMNS
 
 PROFILE_ALIASES: dict[str, str] = {
     "between_low": "between",
+    "target_rtb": "targetrtb",
 }
 
 

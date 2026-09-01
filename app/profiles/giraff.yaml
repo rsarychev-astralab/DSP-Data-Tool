@@ -1,0 +1,47 @@
+id: giraff
+display_name: giraff
+
+source:
+  sheet: Sheet1
+  data_from_row: 2
+
+header_check:
+  row: 1
+  columns:
+    0: [тип рекламодателя]
+    1: [ИНН рекламодателя]
+    7: [Тип исполнителя]
+    14: [Номер изначального договора]
+    22: [НДС]
+    24: [Показы]
+    25: [ЕРИД, erid]
+
+column_map:
+  customer_type: 0
+  customer_inn: 1
+  customer_name: 2
+  customer_oksm: 3
+  customer_reg_no: 4
+  contractor_type: 7
+  contractor_inn: 8
+  contractor_name: 9
+  contractor_oksm: 10
+  contractor_reg_no: 11
+  contract_no: 14
+  contract_date: 15
+  contract_type: 16
+  contract_subject: 17
+  activity_type: 18
+  vat_included: 22
+  amount: 23
+  impressions: 24
+  erid: 25
+
+optional_output_fields:
+  - customer_oksm
+  - customer_reg_no
+  - contractor_oksm
+  - contractor_reg_no
+  - activity_type
+
+constants: {}

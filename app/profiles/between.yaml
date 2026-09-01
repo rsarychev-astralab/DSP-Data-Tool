@@ -12,7 +12,9 @@ header_check:
     1: [Показы]
     2: [ЕРИД, erid]
     3: [ИНН, Рекламодателя]
+    6: [адрес Рекламодателя]
     7: [ИНН, Исполнителя]
+    10: [адрес Исполнителя]
     11: [Номер договора]
     12: [Дата заключения договора]
     13: [Тип договора]
@@ -25,9 +27,11 @@ column_map:
   customer_inn: 3
   customer_name: 4
   customer_type: 5
+  customer_address: 6
   contractor_inn: 7
   contractor_name: 8
   contractor_type: 9
+  contractor_address: 10
   contract_no: 11
   contract_date: 12
   contract_type: 13
@@ -40,6 +44,8 @@ column_map:
   contractor_reg_no: 29
 
 optional_output_fields:
+  - customer_address
+  - contractor_address
   - customer_reg_no
   - customer_oksm
   - contractor_reg_no

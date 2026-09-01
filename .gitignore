@@ -30,3 +30,4 @@ Thumbs.db
 !.env.example
 *.pem
 SSH/
+secrets/
