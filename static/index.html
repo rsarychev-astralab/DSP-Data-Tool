@@ -141,12 +141,13 @@
       }
       .app-main { flex: 1; }
     }
-    .card { border: 1px solid #d4dbe5; box-shadow: 0 1px 3px rgba(15, 45, 74, 0.08); overflow: hidden; }
+    .card { border: 1px solid #d4dbe5; box-shadow: 0 1px 3px rgba(15, 45, 74, 0.08); }
     .card-header {
       background: #f8fafc;
       font-weight: 700;
       color: var(--erir-header);
       border-bottom: 1px solid #d4dbe5;
+      overflow: hidden;
     }
     .card-head-title {
       display: flex;
@@ -235,7 +236,11 @@
       .step.done:not(:last-child)::after { background: #86efac; }
       .step.active:not(:last-child)::after { background: #b8cfe8; }
     }
-    .combobox-list { max-height: 14rem; overflow-y: auto; }
+    .combobox-list {
+      max-height: 14rem;
+      overflow-y: auto;
+      z-index: 1080;
+    }
     .combobox-list .dropdown-item.active,
     .combobox-list .dropdown-item:hover { background: #e8f0f8; color: #153d66; }
     .info-panel .info-title {
