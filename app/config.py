@@ -3,7 +3,7 @@ import os
 
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(override=True)
 
 ROOT = Path(__file__).resolve().parents[1]
 PROFILES_DIR = Path(__file__).resolve().parent / "profiles"

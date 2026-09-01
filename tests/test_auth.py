@@ -46,6 +46,26 @@ def test_basic_auth_rejects_without_credentials(monkeypatch):
     assert locked.get("/health").status_code == 200
 
 
+def test_basic_auth_html_login_page(monkeypatch):
+    monkeypatch.setenv("DSP_BASIC_USER", "dsp")
+    monkeypatch.setenv("DSP_BASIC_PASSWORD", "secret")
+    locked = _locked_app()
+    res = locked.get("/", headers={"accept": "text/html"})
+    assert res.status_code == 401
+    assert "text/html" in res.headers["content-type"]
+    assert "Войти" in res.text
+    assert 'value="dsp"' in res.text
+
+
+def test_basic_auth_skips_localhost(monkeypatch):
+    monkeypatch.setenv("DSP_BASIC_USER", "dsp")
+    monkeypatch.setenv("DSP_BASIC_PASSWORD", "secret")
+    locked = _locked_app()
+    res = locked.get("/", headers={"host": "127.0.0.1:8000"})
+    assert res.status_code == 200
+    assert res.text == "ok"
+
+
 def test_basic_auth_accepts_valid_credentials(monkeypatch):
     monkeypatch.setenv("DSP_BASIC_USER", "dsp")
     monkeypatch.setenv("DSP_BASIC_PASSWORD", "secret")
